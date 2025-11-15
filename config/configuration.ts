@@ -1,6 +1,7 @@
 import { Dialect } from "sequelize/types";
 import dotenv from "dotenv";
 
+// Load environment variables from .env file
 const x = dotenv.config();
 
 export const configuration = {
@@ -14,6 +15,12 @@ export const configuration = {
   },
 
   jwtPrivateKey: process.env.JWT_PRIVATE_KEY,
+  jwtSecret: process.env.JWT_SECRET,
+  jwtExpiry: process.env.JWT_EXPIRY,
+
+  server: {
+    port: process.env.PORT,
+  },
 
   aws: {
     accessKeyId: process.env.ACCESSKEYID,

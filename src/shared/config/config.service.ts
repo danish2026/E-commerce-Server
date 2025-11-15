@@ -8,11 +8,24 @@ export class ConfigService {
   }
 
   get jwtConfig() {
-    return { privateKey: config.jwtPrivateKey };
+    return { 
+      privateKey: config.jwtPrivateKey,
+      secret: config.jwtSecret,
+      expiry: config.jwtExpiry,
+    };
   }
 
   get firebaseConfig() {
     return config.firebase;
   }
+
+  get awsConfig() {
+    return config.aws;
+  }
+
+  get serverConfig() {
+    return config.server;
+  }
 }
+
 

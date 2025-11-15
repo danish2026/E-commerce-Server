@@ -29,10 +29,31 @@ export const databaseProviders = [
       const sequelize = new Sequelize(sequelizeOptions);
       // Add models here as you create them
       // sequelize.addModels([...]);
-      await sequelize.sync();
-      return sequelize;
+      
+      try {
+        await sequelize.authenticate();
+        console.log("✅ Database connection established successfully.");
+        await sequelize.sync();
+        return sequelize;
+      } catch (error: any) {
+        const errorMessage = error?.message || error?.parent?.message || String(error);
+        console.error("❌ Unable to connect to the database:", errorMessage);
+        if (errorMessage.includes("password authentication failed")) {
+          console.error("💡 Please check your DATABASE_USER and DATABASE_PASSWORD in your .env file.");
+        } else if (errorMessage.includes("ENOTFOUND") || errorMessage.includes("ECONNREFUSED")) {
+          console.error("💡 Please check your DATABASE_HOST and DATABASE_PORT in your .env file.");
+        } else if (errorMessage.includes("does not exist") || error?.code === "3D000") {
+          console.error("💡 The database specified in DATABASE_NAME does not exist.");
+          console.error(`   Database name: ${dbConfig.database}`);
+          console.error("   Please create the database first using:");
+          console.error(`   CREATE DATABASE "${dbConfig.database}";`);
+          console.error("   Or update DATABASE_NAME in your .env file to an existing database.");
+        }
+        throw error;
+      }
     },
     inject: [ConfigService],
   },
 ];
+
 
