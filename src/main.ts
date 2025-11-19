@@ -1,54 +1,63 @@
-import { Logger, ValidationPipe } from "@nestjs/common";
-import { NestFactory, Reflector } from "@nestjs/core";
-import * as bodyParser from "body-parser";
-import * as dotenv from "dotenv";
-import { AppModule } from "./app.module";
-import { setupSwagger } from "./swagger";
-import { JwtService } from "@nestjs/jwt";
-import { ConfigService } from "@nestjs/config";
-
-// Polyfill for crypto module
-if (typeof global.crypto === "undefined") {
-  const crypto = require("crypto");
-  global.crypto = crypto;
-}
+import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const logger = new Logger("E-commerce Server");
-  dotenv.config();
   const app = await NestFactory.create(AppModule);
-
-  // Get instances of required services
-  const reflector = app.get(Reflector);
-  const jwtService = app.get(JwtService);
-  const configService = app.get(ConfigService);
-
-  // Other global configurations
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      transformOptions: { enableImplicitConversion: true },
-    })
-  );
-
-  setupSwagger(app);
-
-  // CORS configuration
+  
+  // Enable CORS to allow frontend requests
+  // Allow common development ports and custom FRONTEND_URL
+  const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:5173', // Vite default
+    'http://localhost:5174', // Vite alternate
+    'http://localhost:8080', // Vue CLI default
+    'http://localhost:4200', // Angular default
+  ].filter(Boolean);
+  
   app.enableCors({
-    origin: "*",
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-    allowedHeaders: "Content-Type,Accept,Authorization",
+    origin: (origin, callback) => {
+      // In development, allow all localhost origins for easier development
+      // In production, only allow specified origins
+      const isDevelopment = process.env.NODE_ENV !== 'production';
+      
+      if (!origin) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        callback(null, true);
+      } else if (isDevelopment && origin.startsWith('http://localhost:')) {
+        // In development, allow any localhost port
+        callback(null, true);
+      } else if (allowedOrigins.includes(origin)) {
+        // Allow explicitly listed origins
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
+  
+  app.setGlobalPrefix('api');
 
-  // Body parser configuration
-  app.use(bodyParser.json({ limit: "50mb" }));
-  app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
-
-  await app.listen(process.env.PORT || 3000, () =>
-    logger.log(`Server is running on ${process.env.PORT || 3000}`)
-  );
+  const config = new DocumentBuilder()
+  .setTitle('E-commerce API')
+  .setDescription('API documentation for the E-commerce application')
+  .setVersion('1.0')
+  .addBearerAuth()
+  .build();
+  
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api-docs', app, document, {
+    customSiteTitle: 'E-commerce API Docs',
+  });
+  
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port);
+  console.log(`🚀 Backend server running on http://localhost:${port}/api`);
+  console.log(`📚 Swagger documentation available at http://localhost:${port}/api-docs`);
 }
-
 bootstrap();

@@ -1,4 +1,4 @@
-import { Dialect } from "sequelize/types";
+// SID one
 import dotenv from "dotenv";
 
 // Load environment variables from .env file
@@ -6,21 +6,15 @@ const x = dotenv.config();
 
 export const configuration = {
   database: {
-    dialect: "postgres" as Dialect,
+    dialect: "postgres" as const,
     host: process.env.DATABASE_HOST,
-    port: parseInt(process.env.DATABASE_PORT),
+    port: parseInt(process.env.DATABASE_PORT || '5432'),
     username: process.env.DATABASE_USER,
     password: String(process.env.DATABASE_PASSWORD),
     database: process.env.DATABASE_NAME,
   },
 
   jwtPrivateKey: process.env.JWT_PRIVATE_KEY,
-  jwtSecret: process.env.JWT_SECRET,
-  jwtExpiry: process.env.JWT_EXPIRY,
-
-  server: {
-    port: process.env.PORT,
-  },
 
   aws: {
     accessKeyId: process.env.ACCESSKEYID,

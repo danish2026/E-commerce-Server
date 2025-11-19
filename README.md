@@ -31,45 +31,6 @@
 $ npm install
 ```
 
-### Environment Variables
-
-Create a `.env` file in the root directory with the following required variables:
-
-```env
-# Database Configuration
-DATABASE_HOST=your_database_host
-DATABASE_PORT=5432
-DATABASE_USER=your_database_user
-DATABASE_PASSWORD=your_database_password
-DATABASE_NAME=your_database_name
-
-# JWT Configuration
-JWT_SECRET=your-jwt-secret-key-here
-JWT_EXPIRY=1h
-JWT_PRIVATE_KEY=your-jwt-private-key-here
-
-# Server Configuration
-PORT=3000
-
-# AWS S3 Configuration
-ACCESSKEYID=your_aws_access_key_id
-SECRETKEYID=your_aws_secret_access_key
-S3_REGION=your_aws_region
-
-# Firebase Configuration
-FIREBASE_TYPE=service_account
-FIREBASE_PROJECT_ID=your_firebase_project_id
-FIREBASE_PRIVATE_KEY_ID=your_firebase_private_key_id
-FIREBASE_PRIVATE_KEY=your_firebase_private_key
-FIREBASE_CLIENT_EMAIL=your_firebase_client_email
-FIREBASE_CLIENT_ID=your_firebase_client_id
-FIREBASE_AUTH_URI=https://accounts.google.com/o/oauth2/auth
-FIREBASE_TOKEN_URI=https://oauth2.googleapis.com/token
-FIREBASE_AUTH_PROVIDER_X509_CERT_URL=https://www.googleapis.com/oauth2/v1/certs
-FIREBASE_CLIENT_X509_CERT_URL=your_firebase_client_x509_cert_url
-FIREBASE_UNIVERSE_DOMAIN=googleapis.com
-```
-
 ## Compile and run the project
 
 ```bash
