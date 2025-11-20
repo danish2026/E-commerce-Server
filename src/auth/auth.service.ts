@@ -152,7 +152,6 @@ export class AuthService {
           lastName: userData.lastName,
           isActive: true,
         });
-        console.log(`✅ Created default user: ${userData.email} (${userData.role})`);
       } else {
         // If user exists but password might be wrong, update it
         const isPasswordValid = await bcrypt.compare(userData.password, existingUser.password);
@@ -161,7 +160,6 @@ export class AuthService {
           await this.usersService.update(existingUser.id, {
             password: userData.password, // Plain password - will be hashed by UsersService.update()
           });
-          console.log(`🔄 Updated password for: ${userData.email} (${userData.role})`);
         }
       }
     }

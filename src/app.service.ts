@@ -15,18 +15,6 @@ export class AppService implements OnModuleInit {
     // Seed default users on application startup
     try {
       await this.authService.seedDefaultUsers();
-      console.log('\n📋 Default User Credentials:');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('Super Admin:');
-      console.log('  Email: superadmin@example.com');
-      console.log('  Password: Super@123');
-      console.log('\nSales Manager:');
-      console.log('  Email: salesmanager@example.com');
-      console.log('  Password: Manager@123');
-      console.log('\nSales Man:');
-      console.log('  Email: salesman@example.com');
-      console.log('  Password: Sales@123');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     } catch (error) {
       console.error('Error seeding default users:', error);
     }
