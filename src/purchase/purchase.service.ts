@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreatePurchaseDto } from './dto/create-purchase.dto';
 import { UpdatePurchaseDto } from './dto/update-purchase.dto';
+import { PurchaseFilterDto } from './dto/purchase-filter.dto';
+import { PaginatedPurchaseResponse } from './dto/paginated-purchase-response.dto';
 import { Purchase } from './purchase.entity';
 
 @Injectable()
@@ -20,10 +22,63 @@ export class PurchaseService {
     return this.purchaseRepository.save(purchase);
   }
 
-  async findAll(): Promise<Purchase[]> {
-    return this.purchaseRepository.find({
-      order: { createdAt: 'DESC' },
-    });
+  private buildQuery(filter: PurchaseFilterDto) {
+    const { search, fromDate, toDate, paymentStatus } = filter;
+    const query = this.purchaseRepository.createQueryBuilder('purchase');
+
+    if (search) {
+      const loweredSearch = `%${search.toLowerCase()}%`;
+      query.andWhere(
+        '(LOWER(purchase.supplier) LIKE :search OR LOWER(purchase.buyer) LIKE :search)',
+        { search: loweredSearch },
+      );
+    }
+
+    if (fromDate) {
+      query.andWhere('purchase.dueDate >= :fromDate', { fromDate });
+    }
+
+    if (toDate) {
+      query.andWhere('purchase.dueDate <= :toDate', { toDate });
+    }
+
+    if (paymentStatus) {
+      query.andWhere('purchase.paymentStatus = :paymentStatus', { paymentStatus });
+    }
+
+    return query;
+  }
+
+  async findAll(filter: PurchaseFilterDto = {} as PurchaseFilterDto): Promise<PaginatedPurchaseResponse> {
+    const { page = 1, limit = 10 } = filter;
+    
+    // Build base query for count
+    const countQuery = this.buildQuery(filter);
+    const total = await countQuery.getCount();
+
+    // Build query for data with pagination
+    const dataQuery = this.buildQuery(filter)
+      .orderBy('purchase.createdAt', 'DESC');
+    
+    const skip = (page - 1) * limit;
+    const data = await dataQuery.skip(skip).take(limit).getMany();
+
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(total / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext,
+        hasPrev,
+      },
+    };
   }
 
   async findOne(id: string): Promise<Purchase> {

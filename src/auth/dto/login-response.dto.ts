@@ -15,6 +15,7 @@ export class LoginResponseDto {
     email: string;
     firstName?: string;
     lastName?: string;
+    role: string;
   };
 }
 

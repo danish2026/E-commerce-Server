@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -23,6 +24,11 @@ export class UsersService {
   }
 
   async create(userData: Partial<User>): Promise<User> {
+    // Hash password if provided
+    if (userData.password) {
+      const saltRounds = 10;
+      userData.password = await bcrypt.hash(userData.password, saltRounds);
+    }
     const user = this.userRepository.create(userData);
     return this.userRepository.save(user);
   }
@@ -32,8 +38,29 @@ export class UsersService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
+    
+    // Hash password if provided
+    if (updateData.password) {
+      const saltRounds = 10;
+      updateData.password = await bcrypt.hash(updateData.password, saltRounds);
+    }
+    
     Object.assign(user, updateData);
     return this.userRepository.save(user);
+  }
+
+  async findAll(): Promise<User[]> {
+    return this.userRepository.find({
+      select: ['id', 'email', 'firstName', 'lastName', 'role', 'isActive', 'createdAt', 'updatedAt'],
+    });
+  }
+
+  async remove(id: string): Promise<void> {
+    const user = await this.findOne(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    await this.userRepository.remove(user);
   }
 }
 

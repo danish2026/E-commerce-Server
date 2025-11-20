@@ -9,6 +9,7 @@ import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { User } from '../users/user.entity';
+import { Role } from '../common/enums/role.enum';
 
 @Injectable()
 export class AuthService {
@@ -18,48 +19,18 @@ export class AuthService {
   ) {}
 
   async login(loginDto: LoginDto) {
-    // Only allow login with specific email: danish@gmail.com
-    const ALLOWED_EMAIL = 'danish@gmail.com';
-    const ALLOWED_PASSWORD = 'dani@123';
+    // Find user by email
+    const user = await this.usersService.findByEmail(loginDto.email);
 
-    // Check if the email matches the allowed email
-    if (loginDto.email !== ALLOWED_EMAIL) {
-      throw new UnauthorizedException('Invalid email or password. Only authorized users can login.');
-    }
-
-    // Check if the password matches the allowed password
-    if (loginDto.password !== ALLOWED_PASSWORD) {
-      throw new UnauthorizedException('Invalid email or password. Only authorized users can login.');
-    }
-
-    // Find or create the allowed user
-    let user = await this.usersService.findByEmail(ALLOWED_EMAIL);
-    
     if (!user) {
-      // Create the user if it doesn't exist
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash(ALLOWED_PASSWORD, saltRounds);
-      
-      user = await this.usersService.create({
-        email: ALLOWED_EMAIL,
-        password: hashedPassword,
-        isActive: true,
-      });
-    } else {
-      // Verify password matches (in case it was changed in DB)
-      const isPasswordValid = await bcrypt.compare(
-        ALLOWED_PASSWORD,
-        user.password,
-      );
+      throw new UnauthorizedException('Invalid email or password');
+    }
 
-      if (!isPasswordValid) {
-        // Update password if it doesn't match (in case DB was modified)
-        const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(ALLOWED_PASSWORD, saltRounds);
-        user = await this.usersService.update(user.id, {
-          password: hashedPassword,
-        });
-      }
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid email or password');
     }
 
     if (!user.isActive) {
@@ -69,6 +40,7 @@ export class AuthService {
     const payload = {
       sub: user.id,
       email: user.email,
+      role: user.role,
     };
 
     const accessToken = this.jwtService.sign(payload);
@@ -83,6 +55,7 @@ export class AuthService {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
+        role: user.role,
       },
     };
   }
@@ -98,17 +71,19 @@ export class AuthService {
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(registerDto.password, saltRounds);
 
-    // Create new user
+    // Create new user with default role SALES_MAN
     const newUser = await this.usersService.create({
       email: registerDto.email,
       password: hashedPassword,
       isActive: true,
+      role: Role.SALES_MAN, // Default role for new registrations
     });
 
     // Generate JWT token
     const payload = {
       sub: newUser.id,
       email: newUser.email,
+      role: newUser.role,
     };
 
     const accessToken = this.jwtService.sign(payload);
@@ -123,6 +98,7 @@ export class AuthService {
         email: newUser.email,
         firstName: newUser.firstName,
         lastName: newUser.lastName,
+        role: newUser.role,
       },
     };
   }
@@ -133,6 +109,62 @@ export class AuthService {
       return null;
     }
     return user;
+  }
+
+  /**
+   * Seed default users for testing/development
+   * Creates default users if they don't exist
+   */
+  async seedDefaultUsers(): Promise<void> {
+    const defaultUsers = [
+      {
+        email: 'superadmin@example.com',
+        password: 'Super@123',
+        role: Role.SUPER_ADMIN,
+        firstName: 'Super',
+        lastName: 'Admin',
+      },
+      {
+        email: 'salesmanager@example.com',
+        password: 'Manager@123',
+        role: Role.SALES_MANAGER,
+        firstName: 'Sales',
+        lastName: 'Manager',
+      },
+      {
+        email: 'salesman@example.com',
+        password: 'Sales@123',
+        role: Role.SALES_MAN,
+        firstName: 'Sales',
+        lastName: 'Man',
+      },
+    ];
+
+    for (const userData of defaultUsers) {
+      const existingUser = await this.usersService.findByEmail(userData.email);
+      if (!existingUser) {
+        // Pass plain password - UsersService.create() will hash it
+        await this.usersService.create({
+          email: userData.email,
+          password: userData.password, // Plain password - will be hashed by UsersService
+          role: userData.role,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          isActive: true,
+        });
+        console.log(`✅ Created default user: ${userData.email} (${userData.role})`);
+      } else {
+        // If user exists but password might be wrong, update it
+        const isPasswordValid = await bcrypt.compare(userData.password, existingUser.password);
+        if (!isPasswordValid) {
+          // Update password if it doesn't match
+          await this.usersService.update(existingUser.id, {
+            password: userData.password, // Plain password - will be hashed by UsersService.update()
+          });
+          console.log(`🔄 Updated password for: ${userData.email} (${userData.role})`);
+        }
+      }
+    }
   }
 }
 

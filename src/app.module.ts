@@ -8,7 +8,9 @@ import { UsersModule } from './users/users.module';
 import { User } from './users/user.entity';
 import { PurchaseModule } from './purchase/purchase.module';
 import { Purchase } from './purchase/purchase.entity';
-// import { PurchaseModule } from './purchase/purchase.module';
+import { PurchaseItemModule } from './purchase-item/purchase-item.module';
+import { PurchaseItem } from './purchase-item/purchase-item.entity';
+import { SalesModule } from './sales/sales.module';
 
 @Module({
   imports: [
@@ -21,6 +23,7 @@ import { Purchase } from './purchase/purchase.entity';
         const dbHost = configService.get<string>('DATABASE_HOST') || 'localhost';
         const dbPort = configService.get<number>('DATABASE_PORT') || 5432;
         const dbUser = configService.get<string>('DATABASE_USER');
+        console.log("DB USER =>", dbUser);
         const dbPassword = configService.get<string>('DATABASE_PASSWORD');
         const dbName = configService.get<string>('DATABASE_NAME');
 
@@ -40,7 +43,7 @@ import { Purchase } from './purchase/purchase.entity';
           username: dbUser,
           password: String(dbPassword || ''),
           database: dbName,
-          entities: [User, Purchase],
+          entities: [User, Purchase, PurchaseItem],
           synchronize: configService.get<string>('NODE_ENV') === 'development',
           logging: configService.get<string>('NODE_ENV') === 'development',
         };
@@ -50,6 +53,8 @@ import { Purchase } from './purchase/purchase.entity';
     UsersModule,
     AuthModule,
     PurchaseModule,
+    PurchaseItemModule,
+    SalesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
