@@ -10,7 +10,10 @@ import { PurchaseModule } from './purchase/purchase.module';
 import { Purchase } from './purchase/purchase.entity';
 import { PurchaseItemModule } from './purchase-item/purchase-item.module';
 import { PurchaseItem } from './purchase-item/purchase-item.entity';
-import { SalesModule } from './sales/sales.module';
+import { CategoriesModule } from './categories/categories.module';
+import { Category } from './categories/category.entity';
+import { ProductsModule } from './products/products.module';
+import { Product } from './products/product.entity';
 
 @Module({
   imports: [
@@ -43,7 +46,7 @@ import { SalesModule } from './sales/sales.module';
           username: dbUser,
           password: String(dbPassword || ''),
           database: dbName,
-          entities: [User, Purchase, PurchaseItem],
+          entities: [User, Purchase, PurchaseItem, Category, Product],
           synchronize: configService.get<string>('NODE_ENV') === 'development',
           logging: configService.get<string>('NODE_ENV') === 'development',
         };
@@ -54,7 +57,8 @@ import { SalesModule } from './sales/sales.module';
     AuthModule,
     PurchaseModule,
     PurchaseItemModule,
-    SalesModule,
+    CategoriesModule,
+    ProductsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

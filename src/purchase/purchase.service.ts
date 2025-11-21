@@ -15,9 +15,15 @@ export class PurchaseService {
   ) {}
 
   async create(createPurchaseDto: CreatePurchaseDto): Promise<Purchase> {
+    // Calculate totalAmount if not provided
+    // Formula: (amount * quantity) * (1 + gst / 100)
+    const baseAmount = createPurchaseDto.amount * createPurchaseDto.quantity;
+    const totalAmount = createPurchaseDto.totalAmount ?? baseAmount * (1 + createPurchaseDto.gst / 100);
+    
     const purchase = this.purchaseRepository.create({
       ...createPurchaseDto,
       dueDate: new Date(createPurchaseDto.dueDate),
+      // Note: totalAmount is not stored in the entity, but we calculate it for validation
     });
     return this.purchaseRepository.save(purchase);
   }

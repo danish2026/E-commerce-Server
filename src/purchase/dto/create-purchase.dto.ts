@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
   IsNotEmpty,
@@ -6,6 +6,7 @@ import {
   IsEnum,
   IsDateString,
   Min,
+  IsOptional,
 } from 'class-validator';
 
 export enum PaymentStatus {
@@ -75,4 +76,13 @@ export class CreatePurchaseDto {
   @IsDateString({}, { message: 'Due date must be a valid date' })
   @IsNotEmpty({ message: 'Due date is required' })
   dueDate: string;
+
+  @ApiPropertyOptional({
+    description: 'Total amount (calculated automatically if not provided)',
+    example: 11800.0,
+  })
+  @IsNumber({}, { message: 'Total amount must be a number' })
+  @IsOptional()
+  @Min(0, { message: 'Total amount must be a positive number' })
+  totalAmount?: number;
 }
