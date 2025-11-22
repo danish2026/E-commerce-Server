@@ -68,7 +68,7 @@ async function bootstrap() {
     customSiteTitle: 'E-commerce API Docs',
   });
   
-  const port = process.env.PORT ?? 3001;
+  const port = 3001;
   await app.listen(port);
   console.log(`🚀 Backend server running on http://localhost:${port}/api`);
   console.log(`📚 Swagger documentation available at http://localhost:${port}/api-docs`);
