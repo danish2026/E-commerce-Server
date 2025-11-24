@@ -33,8 +33,20 @@ export class Product {
   @Column({ type: 'varchar', length: 50 })
   unit: string;
 
+  @Column({ type: 'numeric', precision: 10, scale: 2, name: 'cost_price' })
+  costPrice: number;
+
+  @Column({ type: 'numeric', precision: 10, scale: 2, name: 'selling_price' })
+  sellingPrice: number;
+
+  @Column({ type: 'numeric', precision: 10, scale: 2, default: 0 })
+  stock: number;
+
   @Column({ type: 'numeric', precision: 5, scale: 2, name: 'gst_percentage' })
   gstPercentage: number;
+
+  @Column({ type: 'date', name: 'expiry_date', nullable: true })
+  expiryDate: string | null;
 
   @Column({ type: 'varchar', name: 'hsn_code', nullable: true })
   hsnCode: string | null;

@@ -9,22 +9,17 @@ import {
   MaxLength,
   Min,
   Max,
+  IsDateString,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateProductDto {
-  @ApiProperty({
-    description: 'Product name',
-    example: 'iPhone 15 Pro',
-  })
+  @ApiProperty({ description: 'Product name', example: 'Sugar 1Kg' })
   @IsNotEmpty()
   @IsString()
   name: string;
 
-  @ApiProperty({
-    description: 'Stock Keeping Unit (SKU) - must be unique',
-    example: 'IPH15PRO-256-BLK',
-  })
+  @ApiProperty({ description: 'SKU - unique', example: 'SUG001' })
   @IsNotEmpty()
   @IsString()
   sku: string;
@@ -39,7 +34,7 @@ export class CreateProductDto {
 
   @ApiProperty({
     description: 'Brand name',
-    example: 'Apple',
+    example: 'Tata',
     required: false,
   })
   @IsOptional()
@@ -48,17 +43,47 @@ export class CreateProductDto {
 
   @ApiProperty({
     description: 'Unit of measurement',
-    example: 'PCS',
-    enum: ['PCS', 'KG', 'BOX'],
+    example: 'KG',
+    enum: ['PCS', 'KG', 'BOX', 'LTR', 'PACK'],
   })
   @IsNotEmpty()
   @IsString()
-  @IsIn(['PCS', 'KG', 'BOX'])
+  @IsIn(['PCS', 'KG', 'BOX', 'LTR', 'PACK'])
   unit: string;
 
   @ApiProperty({
-    description: 'GST percentage (0-100)',
-    example: 18.0,
+    description: 'Cost Price (purchase rate)',
+    example: 40.5,
+  })
+  @IsNotEmpty()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Type(() => Number)
+  @Min(0)
+  costPrice: number;
+
+  @ApiProperty({
+    description: 'Selling Price (MRP / billing rate)',
+    example: 45.0,
+  })
+  @IsNotEmpty()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Type(() => Number)
+  @Min(0)
+  sellingPrice: number;
+
+  @ApiProperty({
+    description: 'Available stock',
+    example: 100,
+  })
+  @IsNotEmpty()
+  @IsNumber()
+  @Type(() => Number)
+  @Min(0)
+  stock: number;
+
+  @ApiProperty({
+    description: 'GST percentage',
+    example: 5,
     minimum: 0,
     maximum: 100,
   })
@@ -70,8 +95,17 @@ export class CreateProductDto {
   gstPercentage: number;
 
   @ApiProperty({
+    description: 'Expiry Date',
+    example: '2025-12-31',
+    required: false,
+  })
+  @IsOptional()
+  @IsDateString()
+  expiryDate?: string | null;
+
+  @ApiProperty({
     description: 'HSN Code',
-    example: '85171200',
+    example: '11010000',
     required: false,
   })
   @IsOptional()
@@ -79,7 +113,7 @@ export class CreateProductDto {
   hsnCode?: string | null;
 
   @ApiProperty({
-    description: 'Barcode',
+    description: 'Barcode number',
     example: '1234567890123',
     required: false,
   })
@@ -89,7 +123,7 @@ export class CreateProductDto {
 
   @ApiProperty({
     description: 'Product image URL',
-    example: 'https://example.com/images/product.jpg',
+    example: 'https://example.com/sugar.jpg',
     required: false,
   })
   @IsOptional()
