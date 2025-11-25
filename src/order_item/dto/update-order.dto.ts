@@ -3,7 +3,6 @@ import {
   ArrayMinSize,
   IsArray,
   IsEnum,
-  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -13,26 +12,9 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PaymentType } from '../../common/enums/payment-type.enum';
+import { CreateOrderItemDto } from './create-order_item.dto';
 
-export class OrderItemInputDto {
-  @ApiProperty({
-    description: 'Product identifier',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  @IsUUID()
-  productId: string;
-
-  @ApiProperty({
-    description: 'Quantity to bill (units)',
-    example: 2,
-  })
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Type(() => Number)
-  @Min(1)
-  quantity: number;
-}
-
-export class CreateOrderDto {
+export class UpdateOrderDto {
   @ApiProperty({
     description: 'Customer name for the invoice',
     example: 'John Doe',
@@ -66,18 +48,23 @@ export class CreateOrderDto {
     description: 'Payment method used for the order',
     enum: PaymentType,
     example: PaymentType.CASH,
+    required: false,
   })
-  @IsNotEmpty()
+  @IsOptional()
   @IsEnum(PaymentType)
-  paymentType: PaymentType;
+  paymentType?: PaymentType;
 
   @ApiProperty({
     description: 'Order line items with product reference and quantity',
-    type: [OrderItemInputDto],
+    type: [CreateOrderItemDto],
+    required: false,
   })
+  @IsOptional()
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
-  @Type(() => OrderItemInputDto)
-  items: OrderItemInputDto[];
+  @Type(() => CreateOrderItemDto)
+  items?: CreateOrderItemDto[];
 }
+
+

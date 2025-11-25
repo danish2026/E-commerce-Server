@@ -7,12 +7,12 @@ import {
   OneToMany,
 } from 'typeorm';
 import { PaymentType } from '../common/enums/payment-type.enum';
-import { OrderItem } from './order_item.entity';
+import { OrderItem } from '../order_item/order_item.entity';
 
 @Entity('orders')
 export class Order {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id: string; 
 
   @Column({ type: 'varchar', name: 'order_number', unique: true })
   orderNumber: string;
@@ -42,7 +42,7 @@ export class Order {
   })
   paymentType: PaymentType;
 
-  @OneToMany(() => OrderItem, (orderItem) => orderItem.order, {
+  @OneToMany(() => OrderItem, (orderItem: OrderItem) => orderItem.order, {
     cascade: true,
     orphanedRowAction: 'delete',
   })
@@ -54,5 +54,6 @@ export class Order {
   @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt: Date;
 }
+
 
 

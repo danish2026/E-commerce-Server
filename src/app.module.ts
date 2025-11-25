@@ -14,9 +14,9 @@ import { CategoriesModule } from './categories/categories.module';
 import { Category } from './categories/category.entity';
 import { ProductsModule } from './products/products.module';
 import { Product } from './products/product.entity';
-import { OrdersModule } from './order_items/order_items.module';
-import { Order } from './order_items/order.entity';
-import { OrderItem } from './order_items/order_item.entity';
+import { OrderItemModule } from './order_item/order_item.module';
+import { OrderItem } from './order_item/order_item.entity';
+import { Order } from './order_item/order.entity';
 
 @Module({
   imports: [
@@ -49,7 +49,7 @@ import { OrderItem } from './order_items/order_item.entity';
           username: dbUser,
           password: String(dbPassword || ''),
           database: dbName,
-          entities: [User, Purchase, PurchaseItem, Category, Product, Order, OrderItem],
+          entities: [User, Purchase, PurchaseItem, Category, Product, OrderItem, Order],
           synchronize: configService.get<string>('NODE_ENV') === 'development',
           logging: configService.get<string>('NODE_ENV') === 'development',
         };
@@ -62,7 +62,7 @@ import { OrderItem } from './order_items/order_item.entity';
     PurchaseItemModule,
     CategoriesModule,
     ProductsModule,
-    OrdersModule,
+    OrderItemModule,
   ],
   controllers: [AppController],
   providers: [AppService],
