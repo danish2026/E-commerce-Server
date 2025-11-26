@@ -493,6 +493,95 @@ export class OrderItemService {
   }
 
   /**
+   * Get dashboard statistics
+   */
+  async getDashboardStats() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const startOfYear = new Date(today.getFullYear(), 0, 1);
+
+    // Total revenue (all time)
+    const totalRevenueResult = await this.orderRepository
+      .createQueryBuilder('order')
+      .select('COALESCE(SUM(order.grandTotal), 0)', 'total')
+      .getRawOne();
+
+    // Monthly revenue
+    const monthlyRevenueResult = await this.orderRepository
+      .createQueryBuilder('order')
+      .select('COALESCE(SUM(order.grandTotal), 0)', 'total')
+      .where('order.createdAt >= :startOfMonth', { startOfMonth: startOfMonth.toISOString() })
+      .getRawOne();
+
+    // Today's revenue
+    const todayRevenueResult = await this.orderRepository
+      .createQueryBuilder('order')
+      .select('COALESCE(SUM(order.grandTotal), 0)', 'total')
+      .where('order.createdAt >= :today', { today: today.toISOString() })
+      .getRawOne();
+
+    // Total orders count
+    const totalOrders = await this.orderRepository.count();
+
+    // Monthly orders count
+    const monthlyOrders = await this.orderRepository
+      .createQueryBuilder('order')
+      .where('order.createdAt >= :startOfMonth', { startOfMonth: startOfMonth.toISOString() })
+      .getCount();
+
+    // Today's orders count
+    const todayOrders = await this.orderRepository
+      .createQueryBuilder('order')
+      .where('order.createdAt >= :today', { today: today.toISOString() })
+      .getCount();
+
+    // Recent orders (last 5)
+    const recentOrders = await this.orderRepository.find({
+      order: { createdAt: 'DESC' },
+      take: 5,
+      relations: ['orderItems'],
+    });
+
+    // Monthly revenue trend (last 12 months)
+    const startDate = new Date(today.getFullYear() - 1, today.getMonth(), 1);
+    const monthlyTrend = await this.orderRepository
+      .createQueryBuilder('order')
+      .select("TO_CHAR(DATE_TRUNC('month', order.createdAt), 'Mon')", 'month')
+      .addSelect('COALESCE(SUM(CAST(order.grandTotal AS numeric)), 0)', 'revenue')
+      .where('order.createdAt >= :startDate', {
+        startDate: startDate.toISOString(),
+      })
+      .groupBy("DATE_TRUNC('month', order.createdAt)")
+      .orderBy("DATE_TRUNC('month', order.createdAt)", 'ASC')
+      .getRawMany();
+
+    return {
+      revenue: {
+        total: parseFloat(totalRevenueResult?.total || '0'),
+        monthly: parseFloat(monthlyRevenueResult?.total || '0'),
+        today: parseFloat(todayRevenueResult?.total || '0'),
+      },
+      orders: {
+        total: totalOrders,
+        monthly: monthlyOrders,
+        today: todayOrders,
+      },
+      recentOrders: recentOrders.map(order => ({
+        id: order.id,
+        orderNumber: order.orderNumber,
+        customerName: order.customerName,
+        grandTotal: Number(order.grandTotal),
+        createdAt: order.createdAt,
+      })),
+      monthlyTrend: monthlyTrend.map(item => ({
+        month: item.month,
+        revenue: parseFloat(item.revenue || '0'),
+      })),
+    };
+  }
+
+  /**
    * Recalculate order totals after item changes
    */
   private async recalculateOrderTotals(orderId: string): Promise<void> {

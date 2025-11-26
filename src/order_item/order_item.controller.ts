@@ -17,6 +17,7 @@ import { UpdateOrderItemDto } from './dto/update-order_item.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrderFilterDto } from './dto/order-filter.dto';
 import { PaginatedOrderResponse } from './dto/paginated-order-response.dto';
+import { DashboardStatsResponse } from './dto/dashboard-stats.dto';
 import { Order } from './order.entity';
 import { OrderItem } from './order_item.entity';
 
@@ -109,6 +110,17 @@ export class OrderItemController {
   @ApiResponse({ status: 404, description: 'Order item not found' })
   removeItem(@Param('id') id: string): Promise<void> {
     return this.orderItemService.removeItem(id);
+  }
+
+  @Get('stats/dashboard')
+  @ApiOperation({ summary: 'Get dashboard statistics' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns dashboard statistics including revenue, orders, and trends',
+    type: DashboardStatsResponse,
+  })
+  getDashboardStats(): Promise<DashboardStatsResponse> {
+    return this.orderItemService.getDashboardStats();
   }
 }
 
