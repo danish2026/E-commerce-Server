@@ -18,15 +18,15 @@ export class PurchaseController {
   constructor(private readonly purchaseService: PurchaseService) {}
 
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.SALES_MANAGER)
-  @ApiOperation({ summary: 'Create a new purchase (Super Admin & Sales Manager only)' })
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Create a new purchase (Super Admin only)' })
   create(@Body() createPurchaseDto: CreatePurchaseDto) {
     return this.purchaseService.create(createPurchaseDto);
   }
 
   @Get()
-  @Roles(Role.SUPER_ADMIN, Role.SALES_MANAGER)
-  @ApiOperation({ summary: 'Get all purchases with pagination and filters (Super Admin & Sales Manager only)' })
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get all purchases with pagination and filters (Super Admin only)' })
   @ApiResponse({
     status: 200,
     description: 'Returns paginated list of purchases',
@@ -37,22 +37,22 @@ export class PurchaseController {
   }
 
   @Get(':id')
-  @Roles(Role.SUPER_ADMIN, Role.SALES_MANAGER)
-  @ApiOperation({ summary: 'Get purchase by ID (Super Admin & Sales Manager only)' })
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get purchase by ID (Super Admin only)' })
   findOne(@Param('id') id: string) {
     return this.purchaseService.findOne(id);
   }
 
   @Patch(':id')
-  @Roles(Role.SUPER_ADMIN, Role.SALES_MANAGER)
-  @ApiOperation({ summary: 'Update purchase (Super Admin & Sales Manager only)' })
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Update purchase (Super Admin only)' })
   update(@Param('id') id: string, @Body() updatePurchaseDto: UpdatePurchaseDto) {
     return this.purchaseService.update(id, updatePurchaseDto);
   }
 
   @Delete(':id')
-  @Roles(Role.SUPER_ADMIN, Role.SALES_MANAGER)
-  @ApiOperation({ summary: 'Delete purchase (Super Admin & Sales Manager only)' })
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Delete purchase (Super Admin only)' })
   remove(@Param('id') id: string) {
     return this.purchaseService.remove(id);
   }

@@ -29,3 +29,4 @@ export class PaginatedPurchaseResponse {
   meta: PaginationMeta;
 }
 
+

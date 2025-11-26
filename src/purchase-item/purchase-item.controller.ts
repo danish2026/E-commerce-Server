@@ -19,15 +19,15 @@ export class PurchaseItemController {
   constructor(private readonly purchaseItemService: PurchaseItemService) {}
 
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.SALES_MANAGER)
-  @ApiOperation({ summary: 'Create purchase item (Super Admin & Sales Manager only)' })
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Create purchase item (Super Admin only)' })
   create(@Body() createPurchaseItemDto: CreatePurchaseItemDto) {
     return this.purchaseItemService.create(createPurchaseItemDto);
   }
 
   @Get()
-  @Roles(Role.SUPER_ADMIN, Role.SALES_MANAGER)
-  @ApiOperation({ summary: 'Get all purchase items with pagination and filters (Super Admin & Sales Manager only)' })
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get all purchase items with pagination and filters (Super Admin only)' })
   @ApiResponse({
     status: 200,
     description: 'Returns paginated list of purchase items',
@@ -38,8 +38,8 @@ export class PurchaseItemController {
   }
 
   @Get(':id')
-  @Roles(Role.SUPER_ADMIN, Role.SALES_MANAGER)
-  @ApiOperation({ summary: 'Get a purchase item by id (Super Admin & Sales Manager only)' })
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get a purchase item by id (Super Admin only)' })
   @ApiResponse({
     status: 200,
     description: 'Returns a purchase item by id',
@@ -50,8 +50,8 @@ export class PurchaseItemController {
   }
 
   @Put(':id')
-  @Roles(Role.SUPER_ADMIN, Role.SALES_MANAGER)
-  @ApiOperation({ summary: 'Update a purchase item by id (Super Admin & Sales Manager only)' })
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Update a purchase item by id (Super Admin only)' })
   @ApiResponse({
     status: 200,
     description: 'Returns an updated purchase item by id',
@@ -62,8 +62,8 @@ export class PurchaseItemController {
   }
 
   @Delete(':id')
-  @Roles(Role.SUPER_ADMIN, Role.SALES_MANAGER)
-  @ApiOperation({ summary: 'Delete a purchase item by id (Super Admin & Sales Manager only)' })
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Delete a purchase item by id (Super Admin only)' })
   @ApiResponse({
     status: 200,
     description: 'Returns a deleted purchase item by id',

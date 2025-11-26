@@ -13,11 +13,11 @@ export class SalesController {
   constructor() {}
 
   /**
-   * Get all sales - All roles can access (SUPER_ADMIN, SALES_MANAGER, SALES_MAN)
+   * Get all sales - SUPER_ADMIN can access
    */
   @Get()
-  @Roles(Role.SUPER_ADMIN, Role.SALES_MANAGER, Role.SALES_MAN)
-  @ApiOperation({ summary: 'Get all sales (All roles)' })
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get all sales (Super Admin only)' })
   @ApiResponse({ status: 200, description: 'List of all sales' })
   findAll() {
     // TODO: Implement sales service
@@ -25,11 +25,11 @@ export class SalesController {
   }
 
   /**
-   * Get sale by ID - All roles can access
+   * Get sale by ID - SUPER_ADMIN can access
    */
   @Get(':id')
-  @Roles(Role.SUPER_ADMIN, Role.SALES_MANAGER, Role.SALES_MAN)
-  @ApiOperation({ summary: 'Get sale by ID (All roles)' })
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get sale by ID (Super Admin only)' })
   @ApiResponse({ status: 200, description: 'Sale details' })
   findOne(@Param('id') id: string) {
     // TODO: Implement sales service
@@ -37,11 +37,11 @@ export class SalesController {
   }
 
   /**
-   * Create new sale - SUPER_ADMIN and SALES_MANAGER can access
+   * Create new sale - SUPER_ADMIN can access
    */
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.SALES_MANAGER)
-  @ApiOperation({ summary: 'Create a new sale (Super Admin & Sales Manager only)' })
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Create a new sale (Super Admin only)' })
   @ApiResponse({ status: 201, description: 'Sale created successfully' })
   create(@Body() createSaleDto: any) {
     // TODO: Implement sales service
@@ -49,11 +49,11 @@ export class SalesController {
   }
 
   /**
-   * Update sale - SUPER_ADMIN and SALES_MANAGER can access
+   * Update sale - SUPER_ADMIN can access
    */
   @Patch(':id')
-  @Roles(Role.SUPER_ADMIN, Role.SALES_MANAGER)
-  @ApiOperation({ summary: 'Update sale (Super Admin & Sales Manager only)' })
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Update sale (Super Admin only)' })
   @ApiResponse({ status: 200, description: 'Sale updated successfully' })
   update(@Param('id') id: string, @Body() updateSaleDto: any) {
     // TODO: Implement sales service
