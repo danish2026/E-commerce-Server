@@ -17,6 +17,10 @@ import { Product } from './products/product.entity';
 import { OrderItemModule } from './order_item/order_item.module';
 import { OrderItem } from './order_item/order_item.entity';
 import { Order } from './order_item/order.entity';
+import { PermissionsModule } from './permissions/permissions.module';
+import { Permission } from './permissions/permission.entity';
+import { Role } from './permissions/role.entity';
+import { RolePermission } from './permissions/role-permission.entity';
 
 @Module({
   imports: [
@@ -49,7 +53,7 @@ import { Order } from './order_item/order.entity';
           username: dbUser,
           password: String(dbPassword || ''),
           database: dbName,
-          entities: [User, Purchase, PurchaseItem, Category, Product, OrderItem, Order],
+          entities: [User, Purchase, PurchaseItem, Category, Product, OrderItem, Order, Permission, Role, RolePermission],
           synchronize: configService.get<string>('NODE_ENV') === 'development',
           logging: configService.get<string>('NODE_ENV') === 'development',
         };
@@ -63,6 +67,7 @@ import { Order } from './order_item/order.entity';
     CategoriesModule,
     ProductsModule,
     OrderItemModule,
+    PermissionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

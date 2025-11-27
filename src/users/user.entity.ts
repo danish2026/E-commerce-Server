@@ -24,6 +24,12 @@ export class User {
   @Column({ nullable: true })
   lastName: string;
 
+  @Column({ nullable: true })
+  permissionsRoleId?: string;
+
+  @Column({ nullable: true })
+  permissionsRoleName?: string;
+
   @Column({
     type: 'enum',
     enum: Role,

@@ -13,6 +13,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -98,7 +99,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Update user (Super Admin only)' })
   @ApiResponse({ status: HttpStatus.OK, description: 'User updated successfully' })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Access denied' })
-  async update(@Param('id') id: string, @Body() updateData: Partial<CreateUserDto>) {
+  async update(@Param('id') id: string, @Body() updateData: UpdateUserDto) {
     const user = await this.usersService.update(id, updateData);
     const { password, ...userWithoutPassword } = user;
     return userWithoutPassword;

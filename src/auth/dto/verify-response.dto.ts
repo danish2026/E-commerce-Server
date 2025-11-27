@@ -1,21 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export interface Permission {
-  id: string;
-  module: string;
-  action: string;
-  description?: string;
-}
-
-export class LoginResponseDto {
+export class VerifyResponseDto {
   @ApiProperty({
-    description: 'JWT access token',
-    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-  })
-  accessToken: string;
-
-  @ApiProperty({
-    description: 'User information',
+    description: 'User information extracted from the authenticated token',
   })
   user: {
     id: string;
@@ -28,7 +15,7 @@ export class LoginResponseDto {
   };
 
   @ApiProperty({
-    description: 'User permissions based on their role',
+    description: 'Permissions attached to the user via role-permission mappings',
     type: 'array',
     items: {
       type: 'object',
@@ -36,13 +23,16 @@ export class LoginResponseDto {
         id: { type: 'string' },
         module: { type: 'string' },
         action: { type: 'string' },
-        description: { type: 'string' },
+        description: { type: 'string', nullable: true },
       },
     },
   })
-  permissions: Permission[];
+  permissions: {
+    id: string;
+    module: string;
+    action: string;
+    description?: string | null;
+  }[];
 }
-
-
 
 

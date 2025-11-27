@@ -1,80 +1,79 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsString, MinLength, IsEnum, IsOptional } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEmail, IsString, MinLength, IsEnum, IsOptional, IsBoolean } from 'class-validator';
 import { Role } from '../../common/enums/role.enum';
 
-export class CreateUserDto {
-  @ApiProperty({
+export class UpdateUserDto {
+  @ApiPropertyOptional({
     description: 'User email address',
     example: 'user@example.com',
   })
   @IsEmail({}, { message: 'Please provide a valid email address' })
-  @IsNotEmpty({ message: 'Email is required' })
-  email: string;
+  @IsOptional()
+  email?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'User password',
     example: 'password123',
     minLength: 6,
   })
   @IsString()
-  @IsNotEmpty({ message: 'Password is required' })
+  @IsOptional()
   @MinLength(6, { message: 'Password must be at least 6 characters long' })
-  password: string;
+  password?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'User first name',
     example: 'John',
-    required: false,
   })
   @IsString()
   @IsOptional()
   firstName?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'User last name',
     example: 'Doe',
-    required: false,
   })
   @IsString()
   @IsOptional()
   lastName?: string;
 
-  @ApiProperty({
-    description: 'User phone number',
+  @ApiPropertyOptional({
+    description: 'User phone number (stored but not used in User entity)',
     example: '+1234567890',
-    required: false,
   })
   @IsString()
   @IsOptional()
   phone?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'User role',
     enum: Role,
     example: Role.SALES_MAN,
-    default: Role.SALES_MAN,
   })
-  @IsEnum(Role, { message: 'Invalid role' })
+  @IsEnum(Role, { message: 'Invalid role. Must be one of: SUPER_ADMIN, SALES_MANAGER, SALES_MAN' })
   @IsOptional()
   role?: Role;
 
   @ApiPropertyOptional({
+    description: 'User active status',
+    example: true,
+  })
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
+
+  @ApiPropertyOptional({
     description: 'Role ID from permissions service to resolve fine-grained permissions',
-    example: '68ddddcc-ea52-4e98-bdec-66a095ae77a6',
   })
   @IsString()
   @IsOptional()
   permissionsRoleId?: string;
 
   @ApiPropertyOptional({
-    description: 'Human-readable role name from permissions service',
-    example: 'Sales Manager Test',
+    description: 'Role name from permissions service to help with UI display',
   })
   @IsString()
   @IsOptional()
   permissionsRoleName?: string;
 }
-
-
-
 
