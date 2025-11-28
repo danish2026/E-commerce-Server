@@ -248,9 +248,12 @@ export class ProductsService {
   async reduceStock(productId: string, quantity: number, criticalExpiryDays: number = 7): Promise<Product & { expiryWarning?: any }> {
     const product = await this.findOne(productId);
 
-    if (product.stock < quantity) {
+    const currentStock = Number(product.stock);
+    const requestedQuantity = Number(quantity);
+    
+    if (currentStock < requestedQuantity) {
       throw new BadRequestException(
-        `Insufficient stock. Only ${product.stock} item(s) available in stock.`,
+        `Insufficient stock. Only ${currentStock} item(s) available in stock.`,
       );
     }
 
@@ -270,7 +273,7 @@ export class ProductsService {
       }
     }
 
-    product.stock -= quantity;
+    product.stock = Number(product.stock) - Number(quantity);
     const savedProduct = await this.productRepository.save(product);
     
     // Include expiry warning in response if product is expiring soon (but not critical)
@@ -296,7 +299,7 @@ export class ProductsService {
    */
   async increaseStock(productId: string, quantity: number): Promise<Product> {
     const product = await this.findOne(productId);
-    product.stock += quantity;
+    product.stock = Number(product.stock) + Number(quantity);
     return this.productRepository.save(product);
   }
 

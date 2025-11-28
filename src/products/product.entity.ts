@@ -33,11 +33,11 @@ export class Product {
   @Column({ type: 'varchar', length: 50 })
   unit: string;
 
-  @Column({ type: 'numeric', precision: 10, scale: 2, name: 'cost_price' })
-  costPrice: number;
+  @Column({ type: 'numeric', precision: 10, scale: 2, name: 'cost_price', nullable: true, default: 0 })
+  costPrice: number | null;
 
-  @Column({ type: 'numeric', precision: 10, scale: 2, name: 'selling_price' })
-  sellingPrice: number;
+  @Column({ type: 'numeric', precision: 10, scale: 2, name: 'selling_price', nullable: true, default: 0 })
+  sellingPrice: number | null;
 
   @Column({ type: 'numeric', precision: 10, scale: 2, default: 0 })
   stock: number;

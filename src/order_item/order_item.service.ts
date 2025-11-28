@@ -112,11 +112,11 @@ export class OrderItemService {
         }
 
         // Reduce stock within transaction
-        productInTx.stock -= itemDto.quantity;
+        productInTx.stock = Number(productInTx.stock) - Number(itemDto.quantity);
         await queryRunner.manager.save(Product, productInTx);
 
         // Calculate unit price (using selling price from product)
-        const unitPrice = product.sellingPrice;
+        const unitPrice = product.sellingPrice ?? 0;
 
         // Calculate item total (quantity * unit price)
         const itemSubtotal = itemDto.quantity * unitPrice;
@@ -310,7 +310,7 @@ export class OrderItemService {
             where: { id: existingItem.productId },
           });
           if (productInTx) {
-            productInTx.stock += existingItem.quantity;
+            productInTx.stock = Number(productInTx.stock) + Number(existingItem.quantity);
             await queryRunner.manager.save(Product, productInTx);
           }
         }
@@ -362,11 +362,11 @@ export class OrderItemService {
           }
 
           // Reduce stock within transaction
-          productInTx.stock -= itemDto.quantity;
+          productInTx.stock = Number(productInTx.stock) - Number(itemDto.quantity);
           await queryRunner.manager.save(Product, productInTx);
 
           // Calculate unit price (using selling price from product)
-          const unitPrice = product.sellingPrice;
+          const unitPrice = product.sellingPrice ?? 0;
 
           // Calculate item total (quantity * unit price)
           const itemSubtotal = itemDto.quantity * unitPrice;
@@ -472,12 +472,13 @@ export class OrderItemService {
       }
 
       // Recalculate item totals
-      const itemSubtotal = updateOrderItemDto.quantity * product.sellingPrice;
+      const sellingPrice = product.sellingPrice ?? 0;
+      const itemSubtotal = updateOrderItemDto.quantity * sellingPrice;
       const gstAmount = (itemSubtotal * product.gstPercentage) / 100;
       const totalPrice = itemSubtotal + gstAmount;
 
       orderItem.quantity = updateOrderItemDto.quantity;
-      orderItem.unitPrice = product.sellingPrice;
+      orderItem.unitPrice = sellingPrice;
       orderItem.gstPercentage = product.gstPercentage;
       orderItem.gstAmount = Math.round(gstAmount * 100) / 100;
       orderItem.totalPrice = Math.round(totalPrice * 100) / 100;
