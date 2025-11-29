@@ -55,7 +55,7 @@ import { RolePermission } from './permissions/role-permission.entity';
           database: dbName,
           entities: [User, Purchase, PurchaseItem, Category, Product, OrderItem, Order, Permission, Role, RolePermission],
           synchronize: configService.get<string>('NODE_ENV') === 'development',
-          logging: configService.get<string>('NODE_ENV') === 'development',
+          logging: false,
         };
       },
       inject: [ConfigService],
@@ -72,4 +72,4 @@ import { RolePermission } from './permissions/role-permission.entity';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
