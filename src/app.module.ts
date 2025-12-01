@@ -14,13 +14,12 @@ import { CategoriesModule } from './categories/categories.module';
 import { Category } from './categories/category.entity';
 import { ProductsModule } from './products/products.module';
 import { Product } from './products/product.entity';
-import { OrderItemModule } from './order_item/order_item.module';
-import { OrderItem } from './order_item/order_item.entity';
-import { Order } from './order_item/order.entity';
 import { PermissionsModule } from './permissions/permissions.module';
 import { Permission } from './permissions/permission.entity';
 import { Role } from './permissions/role.entity';
 import { RolePermission } from './permissions/role-permission.entity';
+import { OrderItemModule } from './order-item/order-item.module';
+import { OrderItem } from './order-item/order-item.entity';
 
 @Module({
   imports: [
@@ -53,7 +52,7 @@ import { RolePermission } from './permissions/role-permission.entity';
           username: dbUser,
           password: String(dbPassword || ''),
           database: dbName,
-          entities: [User, Purchase, PurchaseItem, Category, Product, OrderItem, Order, Permission, Role, RolePermission],
+          entities: [User, Purchase, PurchaseItem, Category, Product, OrderItem, Permission, Role, RolePermission],
           synchronize: configService.get<string>('NODE_ENV') === 'development',
           logging: false,
         };
