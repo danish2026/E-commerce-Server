@@ -37,11 +37,12 @@ export class OrderItemService {
       totalAmount,
     });
 
-    return await this.orderItemRepository.save(orderItem);
+    const saved = await this.orderItemRepository.save(orderItem);
+    return saved;
   }
 
   async createOrder(createOrderDto: CreateOrderDto) {
-    const { items } = createOrderDto;
+    const { items, customerName, customerPhone, discount, paymentType } = createOrderDto;
     const createdItems: OrderItem[] = [];
     let grandTotal = 0;
 
@@ -65,6 +66,10 @@ export class OrderItemService {
         gstPercentage,
         gstAmount,
         totalAmount,
+        customerName: customerName ?? null,
+        customerPhone: customerPhone ?? null,
+        discount: typeof discount !== 'undefined' ? discount : null,
+        paymentType: paymentType ?? null,
       });
 
       const savedItem = await this.orderItemRepository.save(orderItem);
@@ -117,7 +122,25 @@ export class OrderItemService {
       orderItem.totalAmount = (unitPrice * orderItem.quantity) + orderItem.gstAmount;
     }
 
-    return await this.orderItemRepository.save(orderItem);
+    // Update optional customer/payment fields if provided
+    if (typeof updateOrderItemDto.customerName !== 'undefined') {
+      orderItem.customerName = updateOrderItemDto.customerName as any;
+    }
+
+    if (typeof updateOrderItemDto.customerPhone !== 'undefined') {
+      orderItem.customerPhone = updateOrderItemDto.customerPhone as any;
+    }
+
+    if (typeof updateOrderItemDto.discount !== 'undefined') {
+      orderItem.discount = updateOrderItemDto.discount as any;
+    }
+
+    if (typeof updateOrderItemDto.paymentType !== 'undefined') {
+      orderItem.paymentType = updateOrderItemDto.paymentType as any;
+    }
+
+    await this.orderItemRepository.save(orderItem);
+    return await this.orderItemRepository.findOne({ where: { id } });
   }
 
   async remove(id: string) {

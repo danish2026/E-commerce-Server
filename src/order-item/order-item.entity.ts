@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { Product } from '../products/product.entity';
+import { PaymentType } from '../common/enums/payment-type.enum';
 
 @Entity('order_items')
 export class OrderItem {
@@ -27,4 +28,16 @@ export class OrderItem {
 
     @Column({ type: 'numeric', precision: 10, scale: 2, name: 'total_amount' })
     totalAmount: number;
+
+    @Column({ type: 'varchar', length: 255, name: 'customer_name', nullable: true })
+    customerName?: string | null;
+
+    @Column({ type: 'varchar', length: 50, name: 'customer_phone', nullable: true })
+    customerPhone?: string | null;
+
+    @Column({ type: 'numeric', precision: 10, scale: 2, name: 'discount', nullable: true })
+    discount?: number | null;
+
+    @Column({ type: 'enum', enum: PaymentType, name: 'payment_type', nullable: true })
+    paymentType?: PaymentType | null;
 }
