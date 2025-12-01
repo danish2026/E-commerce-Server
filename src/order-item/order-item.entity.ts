@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
 import { Product } from '../products/product.entity';
 import { PaymentType } from '../common/enums/payment-type.enum';
 
@@ -40,4 +40,7 @@ export class OrderItem {
 
     @Column({ type: 'enum', enum: PaymentType, name: 'payment_type', nullable: true })
     paymentType?: PaymentType | null;
+
+    @CreateDateColumn({ name: 'created_at' })
+    createdAt: Date;
 }

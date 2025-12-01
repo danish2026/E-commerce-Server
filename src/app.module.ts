@@ -20,6 +20,7 @@ import { Role } from './permissions/role.entity';
 import { RolePermission } from './permissions/role-permission.entity';
 import { OrderItemModule } from './order-item/order-item.module';
 import { OrderItem } from './order-item/order-item.entity';
+import { DashbordModule } from './dashbord/dashbord.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { OrderItem } from './order-item/order-item.entity';
     ProductsModule,
     OrderItemModule,
     PermissionsModule,
+    DashbordModule,
   ],
   controllers: [AppController],
   providers: [AppService],
