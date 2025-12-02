@@ -5,6 +5,8 @@ import { CreateOrderItemDto, CreateOrderDto } from './dto/create-order-item.dto'
 import { UpdateOrderItemDto } from './dto/update-order-item.dto';
 import { OrderItem } from './order-item.entity';
 import { Product } from '../products/product.entity';
+import { OrderItemFilterDto } from './dto/order-item-filter.dto';
+import { PaginatedOrderItemResponse } from './dto/paginated-order-item-response.dto';
 
 @Injectable()
 export class OrderItemService {
@@ -83,8 +85,72 @@ export class OrderItemService {
     };
   }
 
-  findAll() {
-    return this.orderItemRepository.find();
+  private buildQuery(filter: OrderItemFilterDto) {
+    const { search, fromDate, toDate, minSubtotal, maxSubtotal } = filter;
+    const query = this.orderItemRepository
+      .createQueryBuilder('orderItem')
+      .leftJoinAndSelect('orderItem.product', 'product');
+
+    if (search) {
+      const loweredSearch = `%${search.toLowerCase()}%`;
+      query.andWhere(
+        '(LOWER(CAST(orderItem.id AS VARCHAR)) LIKE :search OR (orderItem.customerName IS NOT NULL AND LOWER(orderItem.customerName) LIKE :search) OR (orderItem.customerPhone IS NOT NULL AND LOWER(orderItem.customerPhone) LIKE :search))',
+        { search: loweredSearch },
+      );
+    }
+
+    if (fromDate) {
+      query.andWhere('orderItem.createdAt >= :fromDate', { fromDate });
+    }
+
+    if (toDate) {
+      // Add time to include the entire day
+      const toDateEnd = new Date(toDate);
+      toDateEnd.setHours(23, 59, 59, 999);
+      query.andWhere('orderItem.createdAt <= :toDate', { toDate: toDateEnd });
+    }
+
+    if (minSubtotal !== undefined) {
+      query.andWhere('orderItem.totalAmount >= :minSubtotal', { minSubtotal });
+    }
+
+    if (maxSubtotal !== undefined) {
+      query.andWhere('orderItem.totalAmount <= :maxSubtotal', { maxSubtotal });
+    }
+
+    return query;
+  }
+
+  async findAll(filter: OrderItemFilterDto = {} as OrderItemFilterDto): Promise<PaginatedOrderItemResponse> {
+    const { page = 1, limit = 10 } = filter;
+    
+    // Build base query for count
+    const countQuery = this.buildQuery(filter);
+    const total = await countQuery.getCount();
+
+    // Build query for data with pagination
+    const dataQuery = this.buildQuery(filter)
+      .orderBy('orderItem.createdAt', 'DESC');
+    
+    const skip = (page - 1) * limit;
+    const data = await dataQuery.skip(skip).take(limit).getMany();
+
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(total / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext,
+        hasPrev,
+      },
+    };
   }
 
   findOne(id: string) {

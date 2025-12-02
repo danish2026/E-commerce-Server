@@ -1,8 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { OrderItemService } from './order-item.service';
 import { CreateOrderItemDto, CreateOrderDto } from './dto/create-order-item.dto';
 import { UpdateOrderItemDto } from './dto/update-order-item.dto';
+import { OrderItemFilterDto } from './dto/order-item-filter.dto';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { PaginatedOrderItemResponse } from './dto/paginated-order-item-response.dto';
 
+@ApiTags('order-item')
 @Controller('order-item')
 export class OrderItemController {
   constructor(private readonly orderItemService: OrderItemService) { }
@@ -18,8 +22,14 @@ export class OrderItemController {
   }
 
   @Get()
-  findAll() {
-    return this.orderItemService.findAll();
+  @ApiOperation({ summary: 'Get all order items with pagination and filters' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns paginated list of order items',
+    type: PaginatedOrderItemResponse,
+  })
+  findAll(@Query() filterDto: OrderItemFilterDto) {
+    return this.orderItemService.findAll(filterDto);
   }
 
   @Get(':id')
