@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -14,6 +15,8 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UserFilterDto } from './dto/user-filter.dto';
+import { PaginatedUserResponse } from './dto/paginated-user-response.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -29,16 +32,20 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   /**
-   * Get all users - Only SUPER_ADMIN can access
+   * Get all users with pagination and filters - Only SUPER_ADMIN can access
    */
   @Get()
   @UseGuards(RolesGuard)
   @Roles(Role.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Get all users (Super Admin only)' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'List of all users' })
+  @ApiOperation({ summary: 'Get all users with pagination and filters (Super Admin only)' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Returns paginated list of users',
+    type: PaginatedUserResponse,
+  })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Access denied' })
-  async findAll() {
-    return this.usersService.findAll();
+  async findAll(@Query() filterDto: UserFilterDto): Promise<PaginatedUserResponse> {
+    return this.usersService.findAll(filterDto);
   }
 
   /**

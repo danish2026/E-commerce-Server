@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
 import * as bcrypt from 'bcrypt';
+import { UserFilterDto } from './dto/user-filter.dto';
+import { PaginatedUserResponse } from './dto/paginated-user-response.dto';
 
 @Injectable()
 export class UsersService {
@@ -86,21 +88,71 @@ export class UsersService {
     return this.userRepository.save(user);
   }
 
-  async findAll(): Promise<User[]> {
-    return this.userRepository.find({
-      select: [
-        'id',
-        'email',
-        'firstName',
-        'lastName',
-        'role',
-        'permissionsRoleId',
-        'permissionsRoleName',
-        'isActive',
-        'createdAt',
-        'updatedAt',
-      ],
-    });
+  private buildQuery(filter: UserFilterDto) {
+    const { search, fromDate, toDate } = filter;
+    const query = this.userRepository.createQueryBuilder('user');
+
+    if (search) {
+      const loweredSearch = `%${search.toLowerCase()}%`;
+      query.andWhere(
+        '(LOWER(user.email) LIKE :search OR LOWER(user.firstName) LIKE :search OR LOWER(user.lastName) LIKE :search)',
+        { search: loweredSearch },
+      );
+    }
+
+    if (fromDate) {
+      query.andWhere('user.createdAt >= :fromDate', { fromDate });
+    }
+
+    if (toDate) {
+      query.andWhere('user.createdAt <= :toDate', { toDate });
+    }
+
+    return query;
+  }
+
+  async findAll(filter: UserFilterDto = {} as UserFilterDto): Promise<PaginatedUserResponse> {
+    const { page = 1, pageSize = 10 } = filter;
+    
+    // Build base query for count
+    const countQuery = this.buildQuery(filter);
+    const total = await countQuery.getCount();
+
+    // Build query for data with pagination
+    const dataQuery = this.buildQuery(filter)
+      .select([
+        'user.id',
+        'user.email',
+        'user.firstName',
+        'user.lastName',
+        'user.role',
+        'user.permissionsRoleId',
+        'user.permissionsRoleName',
+        'user.isActive',
+        'user.createdAt',
+        'user.updatedAt',
+      ])
+      .orderBy('user.createdAt', 'DESC');
+    
+    const skip = (page - 1) * pageSize;
+    const data = await dataQuery.skip(skip).take(pageSize).getMany();
+
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(total / pageSize);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
+    return {
+      data,
+      meta: {
+        page,
+        limit: pageSize,
+        total,
+        totalPages,
+        hasNext,
+        hasPrev,
+      },
+    };
   }
 
   async remove(id: string): Promise<void> {

@@ -13,6 +13,8 @@ import { CreatePermissionDto } from './dto/create-permission.dto';
 import { BulkCreatePermissionDto } from './dto/bulk-create-permission.dto';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { CreateRolePermissionDto } from './dto/create-role-permission.dto';
+import { PermissionFilterDto } from './dto/permission-filter.dto';
+import { PaginatedPermissionResponse } from './dto/paginated-permission-response.dto';
 
 @Injectable()
 export class PermissionsService {
@@ -76,10 +78,60 @@ export class PermissionsService {
     return this.permissionRepository.save(permissions);
   }
 
-  async findAllPermissions(): Promise<Permission[]> {
-    return this.permissionRepository.find({
-      order: { module: 'ASC', action: 'ASC' },
-    });
+  private buildQuery(filter: PermissionFilterDto) {
+    const { search, module, action } = filter;
+    const query = this.permissionRepository.createQueryBuilder('permission');
+
+    if (search) {
+      const loweredSearch = `%${search.toLowerCase()}%`;
+      query.andWhere(
+        '(LOWER(permission.module) LIKE :search OR LOWER(permission.action) LIKE :search OR LOWER(permission.description) LIKE :search)',
+        { search: loweredSearch },
+      );
+    }
+
+    if (module) {
+      query.andWhere('permission.module = :module', { module });
+    }
+
+    if (action) {
+      query.andWhere('permission.action = :action', { action });
+    }
+
+    return query;
+  }
+
+  async findAllPermissions(filter: PermissionFilterDto = {} as PermissionFilterDto): Promise<PaginatedPermissionResponse> {
+    const { page = 1, limit = 10 } = filter;
+    
+    // Build base query for count
+    const countQuery = this.buildQuery(filter);
+    const total = await countQuery.getCount();
+
+    // Build query for data with pagination
+    const dataQuery = this.buildQuery(filter)
+      .orderBy('permission.module', 'ASC')
+      .addOrderBy('permission.action', 'ASC');
+    
+    const skip = (page - 1) * limit;
+    const data = await dataQuery.skip(skip).take(limit).getMany();
+
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(total / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext,
+        hasPrev,
+      },
+    };
   }
 
   async findOnePermission(id: string): Promise<Permission> {

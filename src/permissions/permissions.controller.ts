@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Param,
+  Query,
   HttpCode,
   HttpStatus,
   UseGuards,
@@ -19,6 +20,8 @@ import { CreatePermissionDto } from './dto/create-permission.dto';
 import { BulkCreatePermissionDto } from './dto/bulk-create-permission.dto';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { CreateRolePermissionDto } from './dto/create-role-permission.dto';
+import { PermissionFilterDto } from './dto/permission-filter.dto';
+import { PaginatedPermissionResponse } from './dto/paginated-permission-response.dto';
 import { Permission } from './permission.entity';
 import { Role } from './role.entity';
 import { RolePermission } from './role-permission.entity';
@@ -33,14 +36,14 @@ export class PermissionsController {
 
   // Permission endpoints
   @Get()
-  @ApiOperation({ summary: 'Get all permissions' })
+  @ApiOperation({ summary: 'Get all permissions with pagination and filters' })
   @ApiResponse({
     status: 200,
-    description: 'Returns list of all permissions',
-    type: [Permission],
+    description: 'Returns paginated list of permissions',
+    type: PaginatedPermissionResponse,
   })
-  findAllPermissions(): Promise<Permission[]> {
-    return this.permissionsService.findAllPermissions();
+  findAllPermissions(@Query() filterDto: PermissionFilterDto): Promise<PaginatedPermissionResponse> {
+    return this.permissionsService.findAllPermissions(filterDto);
   }
 
   @Post()
