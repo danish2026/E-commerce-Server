@@ -191,6 +191,9 @@ import { OrderItem } from 'src/order-item/order-item.entity';
 
 @Injectable()
 export class DashbordService {
+  getDashboardData() {
+    throw new Error('Method not implemented.');
+  }
   constructor(
     @InjectRepository(OrderItem)
     private readonly orderItemRepository: Repository<OrderItem>,

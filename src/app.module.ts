@@ -21,12 +21,14 @@ import { RolePermission } from './permissions/role-permission.entity';
 import { OrderItemModule } from './order-item/order-item.module';
 import { OrderItem } from './order-item/order-item.entity';
 import { DashbordModule } from './dashbord/dashbord.module';
+// import { ReportModule } from './report/report.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
@@ -69,6 +71,7 @@ import { DashbordModule } from './dashbord/dashbord.module';
     OrderItemModule,
     PermissionsModule,
     DashbordModule,
+    // ReportModule,
   ],
   controllers: [AppController],
   providers: [AppService],
