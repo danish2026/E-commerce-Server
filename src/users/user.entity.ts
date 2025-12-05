@@ -12,17 +12,26 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ unique: true })
-  email: string;
+  @Column({ 
+    type: 'varchar',
+    length: 255,
+    unique: true, 
+    nullable: false 
+  })
+  email!: string;
 
-  @Column()
-  password: string;
+  @Column({ 
+    type: 'varchar',
+    length: 255,
+    nullable: false 
+  })
+  password!: string;
 
   @Column({ nullable: true })
-  firstName: string;
+  firstName?: string;
 
   @Column({ nullable: true })
-  lastName: string;
+  lastName?: string;
 
   @Column({ nullable: true })
   permissionsRoleId?: string;
@@ -34,11 +43,16 @@ export class User {
     type: 'enum',
     enum: Role,
     default: Role.SALES_MAN,
+    nullable: false,
   })
-  role: Role;
+  role!: Role;
 
-  @Column({ default: true })
-  isActive: boolean;
+  @Column({ 
+    type: 'boolean',
+    default: true,
+    nullable: false 
+  })
+  isActive!: boolean;
 
   @CreateDateColumn()
   createdAt: Date;

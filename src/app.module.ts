@@ -32,19 +32,19 @@ import { DashbordModule } from './dashbord/dashbord.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        const dbHost = configService.get<string>('DATABASE_HOST') || 'localhost';
-        const dbPort = configService.get<number>('DATABASE_PORT') || 5432;
+        const dbHost = configService.get<string>('DB_HOST') || 'localhost';
+        const dbPort = configService.get<number>('DB_PORT') || 3306;
         const dbUser = configService.get<string>('DATABASE_USER');
         console.log("DB USER =>", dbUser);
         const dbPassword = configService.get<string>('DATABASE_PASSWORD');
-        const dbName = configService.get<string>('DATABASE_NAME');
+        const dbName = configService.get<string>('DB_NAME') || configService.get<string>('DATABASE_NAME');
 
         if (!dbUser || !dbPassword || !dbName) {
           console.error('⚠️  Missing database configuration!');
           console.error('Please set the following environment variables:');
           if (!dbUser) console.error('  - DATABASE_USER');
           if (!dbPassword) console.error('  - DATABASE_PASSWORD');
-          if (!dbName) console.error('  - DATABASE_NAME');
+          if (!dbName) console.error('  - DB_NAME or DATABASE_NAME');
           console.error('See .env.example for reference');
         }
 
