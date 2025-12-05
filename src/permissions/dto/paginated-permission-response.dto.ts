@@ -10,3 +10,5 @@ export class PaginatedPermissionResponse {
   meta: PaginationMeta;
 }
 
+
+

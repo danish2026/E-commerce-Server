@@ -3,6 +3,7 @@ import { CreatePurchaseItemDto } from './dto/create-purchase-item.dto';
 import { UpdatePurchaseItemDto } from './dto/update-purchase-item.dto';
 import { Repository } from 'typeorm';
 import { PurchaseItem } from './purchase-item.entity';
+import { Purchase } from '../purchase/purchase.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PurchaseItemFilterDto } from './dto/purchase-item-filter.dto';
 import { PaginatedPurchaseItemResponse } from './dto/paginated-purchase-item-response.dto';
@@ -12,19 +13,54 @@ export class PurchaseItemService {
   constructor(
     @InjectRepository(PurchaseItem)
     private readonly purchaseItemRepository: Repository<PurchaseItem>,
+    @InjectRepository(Purchase)
+    private readonly purchaseRepository: Repository<Purchase>,
   ) {}
 
-  async create(createPurchaseItemDto: CreatePurchaseItemDto): Promise<PurchaseItem> {
+  async create(createPurchaseItemDto: CreatePurchaseItemDto): Promise<PurchaseItem & { supplier?: string | null; buyer?: string | null }> {
+    const { purchaseId, supplier, buyer, ...itemData } = createPurchaseItemDto;
+    
+    // If purchaseId is not provided but supplier and buyer are, try to find a matching purchase
+    let finalPurchaseId = purchaseId;
+    if (!finalPurchaseId && supplier && buyer) {
+      const matchingPurchase = await this.purchaseRepository.findOne({
+        where: { supplier, buyer },
+        order: { createdAt: 'DESC' }, // Get the most recent one
+      });
+      if (matchingPurchase) {
+        finalPurchaseId = matchingPurchase.id;
+      }
+    }
+    
     const purchaseItem = this.purchaseItemRepository.create({
-      ...createPurchaseItemDto,
+      ...itemData,
       total: createPurchaseItemDto.price * createPurchaseItemDto.quantity,
+      ...(finalPurchaseId && { purchaseId: finalPurchaseId }),
     });
-    return this.purchaseItemRepository.save(purchaseItem);
+    const saved = await this.purchaseItemRepository.save(purchaseItem);
+    
+    // Reload with purchase relation to get supplier and buyer
+    const itemWithPurchase = await this.purchaseItemRepository.findOne({
+      where: { id: saved.id },
+      relations: ['purchase'],
+    });
+    
+    if (!itemWithPurchase) {
+      throw new NotFoundException(`Purchase item with ID ${saved.id} not found after creation`);
+    }
+    
+    const itemWithPurchaseTyped = itemWithPurchase as PurchaseItem & { purchase?: { supplier?: string; buyer?: string } };
+    return {
+      ...itemWithPurchaseTyped,
+      supplier: itemWithPurchaseTyped.purchase?.supplier || null,
+      buyer: itemWithPurchaseTyped.purchase?.buyer || null,
+    };
   }
 
   private buildQuery(filter: PurchaseItemFilterDto) {
     const { search, fromDate, toDate } = filter;
-    const query = this.purchaseItemRepository.createQueryBuilder('purchaseItem');
+    const query = this.purchaseItemRepository.createQueryBuilder('purchaseItem')
+      .leftJoinAndSelect('purchaseItem.purchase', 'purchase');
 
     if (search) {
       const loweredSearch = `%${search.toLowerCase()}%`;
@@ -57,7 +93,17 @@ export class PurchaseItemService {
       .orderBy('purchaseItem.createdAt', 'DESC');
     
     const skip = (page - 1) * limit;
-    const data = await dataQuery.skip(skip).take(limit).getMany();
+    const purchaseItems = await dataQuery.skip(skip).take(limit).getMany();
+
+    // Map purchase items to include supplier and buyer from purchase
+    const data = purchaseItems.map(item => {
+      const itemWithPurchase = item as PurchaseItem & { purchase?: { supplier?: string; buyer?: string } };
+      return {
+        ...item,
+        supplier: itemWithPurchase.purchase?.supplier || null,
+        buyer: itemWithPurchase.purchase?.buyer || null,
+      };
+    });
 
     // Calculate pagination metadata
     const totalPages = Math.ceil(total / limit);
@@ -77,18 +123,45 @@ export class PurchaseItemService {
     };
   }
 
-  async findOne(id: string): Promise<PurchaseItem> {
+  async findOne(id: string): Promise<PurchaseItem & { supplier?: string | null; buyer?: string | null }> {
     const purchaseItem = await this.purchaseItemRepository.findOne({
       where: { id },
+      relations: ['purchase'],
     });
     if (!purchaseItem) {
       throw new NotFoundException(`Purchase item with ID ${id} not found`);
     }
-    return purchaseItem;
+    const purchaseItemTyped = purchaseItem as PurchaseItem & { purchase?: { supplier?: string; buyer?: string } };
+    return {
+      ...purchaseItemTyped,
+      supplier: purchaseItemTyped.purchase?.supplier || null,
+      buyer: purchaseItemTyped.purchase?.buyer || null,
+    };
   }
 
-  async update(id: string, updatePurchaseItemDto: UpdatePurchaseItemDto): Promise<PurchaseItem> {
-    const purchaseItem = await this.findOne(id);
+  async update(id: string, updatePurchaseItemDto: UpdatePurchaseItemDto): Promise<PurchaseItem & { supplier?: string | null; buyer?: string | null }> {
+    const purchaseItem = await this.purchaseItemRepository.findOne({
+      where: { id },
+      relations: ['purchase'],
+    });
+    
+    if (!purchaseItem) {
+      throw new NotFoundException(`Purchase item with ID ${id} not found`);
+    }
+    
+    const { supplier, buyer, purchaseId, ...itemData } = updatePurchaseItemDto;
+    
+    // If purchaseId is not provided but supplier and buyer are, try to find a matching purchase
+    let finalPurchaseId = purchaseId;
+    if (!finalPurchaseId && supplier && buyer) {
+      const matchingPurchase = await this.purchaseRepository.findOne({
+        where: { supplier, buyer },
+        order: { createdAt: 'DESC' }, // Get the most recent one
+      });
+      if (matchingPurchase) {
+        finalPurchaseId = matchingPurchase.id;
+      }
+    }
     
     // Recalculate total if price or quantity is updated
     if (updatePurchaseItemDto.price !== undefined || updatePurchaseItemDto.quantity !== undefined) {
@@ -97,8 +170,26 @@ export class PurchaseItemService {
       purchaseItem.total = finalPrice * finalQuantity;
     }
     
-    Object.assign(purchaseItem, updatePurchaseItemDto);
-    return this.purchaseItemRepository.save(purchaseItem);
+    // Update purchaseId if found
+    if (finalPurchaseId !== undefined) {
+      purchaseItem.purchaseId = finalPurchaseId || undefined;
+    }
+    
+    Object.assign(purchaseItem, itemData);
+    const saved = await this.purchaseItemRepository.save(purchaseItem);
+    
+    // Reload with purchase relation to get supplier and buyer
+    const updated = await this.purchaseItemRepository.findOne({
+      where: { id: saved.id },
+      relations: ['purchase'],
+    });
+    
+    const updatedTyped = updated as PurchaseItem & { purchase?: { supplier?: string; buyer?: string } };
+    return {
+      ...updatedTyped,
+      supplier: updatedTyped.purchase?.supplier || null,
+      buyer: updatedTyped.purchase?.buyer || null,
+    };
   }
 
   async remove(id: string): Promise<void> {

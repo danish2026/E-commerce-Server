@@ -48,7 +48,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNumber, IsArray, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
-import { OrderItem } from 'src/order-item/order-item.entity';
+import { OrderItem } from 'src/billing/order-item.entity';
 
 export class Dashbord {
     @ApiProperty()

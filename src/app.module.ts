@@ -18,8 +18,8 @@ import { PermissionsModule } from './permissions/permissions.module';
 import { Permission } from './permissions/permission.entity';
 import { Role } from './permissions/role.entity';
 import { RolePermission } from './permissions/role-permission.entity';
-import { OrderItemModule } from './order-item/order-item.module';
-import { OrderItem } from './order-item/order-item.entity';
+import { OrderItemModule } from './billing/order-item.module';
+import { OrderItem } from './billing/order-item.entity';
 import { DashbordModule } from './dashbord/dashbord.module';
 // import { ReportModule } from './report/report.module';
 

@@ -50,4 +50,28 @@ export class CreatePurchaseItemDto {
   @IsNotEmpty({ message: 'Total is required' })
   @Min(0, { message: 'Total must be a positive number' })
   total: number;
+
+  @ApiPropertyOptional({
+    description: 'Purchase ID to link this item to a purchase',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsString()
+  @IsOptional()
+  purchaseId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Supplier name (used to find matching purchase)',
+    example: 'Supplier ABC',
+  })
+  @IsString()
+  @IsOptional()
+  supplier?: string;
+
+  @ApiPropertyOptional({
+    description: 'Buyer name (used to find matching purchase)',
+    example: 'Buyer XYZ',
+  })
+  @IsString()
+  @IsOptional()
+  buyer?: string;
 }

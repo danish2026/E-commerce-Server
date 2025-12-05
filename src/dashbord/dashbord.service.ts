@@ -187,7 +187,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
 import { Dashbord } from './dashbord.entity';
-import { OrderItem } from 'src/order-item/order-item.entity';
+import { OrderItem } from 'src/billing/order-item.entity';
 
 @Injectable()
 export class DashbordService {
