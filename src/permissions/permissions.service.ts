@@ -11,6 +11,7 @@ import { Role } from './role.entity';
 import { RolePermission } from './role-permission.entity';
 import { CreatePermissionDto } from './dto/create-permission.dto';
 import { BulkCreatePermissionDto } from './dto/bulk-create-permission.dto';
+import { UpdatePermissionDto } from './dto/update-permission.dto';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { CreateRolePermissionDto } from './dto/create-role-permission.dto';
 import { PermissionFilterDto } from './dto/permission-filter.dto';
@@ -144,6 +145,51 @@ export class PermissionsService {
     }
 
     return permission;
+  }
+
+  async updatePermission(id: string, updatePermissionDto: UpdatePermissionDto): Promise<Permission> {
+    const permission = await this.findOnePermission(id);
+
+    // If module or action is being updated, check for conflicts
+    if (updatePermissionDto.module || updatePermissionDto.action) {
+      const module = updatePermissionDto.module || permission.module;
+      const action = updatePermissionDto.action || permission.action;
+
+      const existingPermission = await this.permissionRepository.findOne({
+        where: {
+          module,
+          action,
+        },
+      });
+
+      // If a permission with the same module and action exists and it's not the current one
+      if (existingPermission && existingPermission.id !== id) {
+        throw new ConflictException(
+          `Permission with module "${module}" and action "${action}" already exists`,
+        );
+      }
+    }
+
+    // Update the permission
+    Object.assign(permission, updatePermissionDto);
+    return this.permissionRepository.save(permission);
+  }
+
+  async deletePermission(id: string): Promise<void> {
+    const permission = await this.findOnePermission(id);
+
+    // Check if permission is being used by any role
+    const rolePermissions = await this.rolePermissionRepository.find({
+      where: { permissionId: id },
+    });
+
+    if (rolePermissions.length > 0) {
+      throw new BadRequestException(
+        `Cannot delete permission. It is currently assigned to ${rolePermissions.length} role(s). Please remove it from all roles first.`,
+      );
+    }
+
+    await this.permissionRepository.remove(permission);
   }
 
   async getModules(): Promise<string[]> {

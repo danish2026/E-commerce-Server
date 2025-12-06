@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -18,6 +20,7 @@ import {
 import { PermissionsService } from './permissions.service';
 import { CreatePermissionDto } from './dto/create-permission.dto';
 import { BulkCreatePermissionDto } from './dto/bulk-create-permission.dto';
+import { UpdatePermissionDto } from './dto/update-permission.dto';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { CreateRolePermissionDto } from './dto/create-role-permission.dto';
 import { PermissionFilterDto } from './dto/permission-filter.dto';
@@ -85,6 +88,47 @@ export class PermissionsController {
   })
   getModules(): Promise<string[]> {
     return this.permissionsService.getModules();
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get a permission by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the permission',
+    type: Permission,
+  })
+  @ApiResponse({ status: 404, description: 'Permission not found' })
+  findOnePermission(@Param('id') id: string): Promise<Permission> {
+    return this.permissionsService.findOnePermission(id);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update a permission' })
+  @ApiResponse({
+    status: 200,
+    description: 'Permission updated successfully',
+    type: Permission,
+  })
+  @ApiResponse({ status: 404, description: 'Permission not found' })
+  @ApiResponse({ status: 409, description: 'Permission with same module and action already exists' })
+  updatePermission(
+    @Param('id') id: string,
+    @Body() updatePermissionDto: UpdatePermissionDto,
+  ): Promise<Permission> {
+    return this.permissionsService.updatePermission(id, updatePermissionDto);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete a permission' })
+  @ApiResponse({
+    status: 204,
+    description: 'Permission deleted successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Permission not found' })
+  @ApiResponse({ status: 400, description: 'Permission is assigned to one or more roles' })
+  async deletePermission(@Param('id') id: string): Promise<void> {
+    return this.permissionsService.deletePermission(id);
   }
 
   // Role endpoints

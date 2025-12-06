@@ -50,4 +50,20 @@ export class CreatePurchaseItemDto {
   @IsNotEmpty({ message: 'Total is required' })
   @Min(0, { message: 'Total must be a positive number' })
   total: number;
+
+  @ApiPropertyOptional({
+    description: 'Supplier name',
+    example: 'Supplier ABC',
+  })
+  @IsString()
+  @IsOptional()
+  supplier?: string;
+
+  @ApiPropertyOptional({
+    description: 'Buyer name',
+    example: 'Buyer XYZ',
+  })
+  @IsString()
+  @IsOptional()
+  buyer?: string;
 }

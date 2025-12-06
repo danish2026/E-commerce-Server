@@ -27,6 +27,12 @@ export class PurchaseItem {
   @Column('decimal', { precision: 10, scale: 2 })
   total: number;
 
+  @Column({ nullable: true })
+  supplier: string;
+
+  @Column({ nullable: true })
+  buyer: string;
+
   @CreateDateColumn()
   createdAt: Date;
 
