@@ -90,6 +90,43 @@ export class PermissionsController {
     return this.permissionsService.getModules();
   }
 
+  // Role endpoints - must be defined before @Get(':id') to avoid route conflicts
+  @Get('roles')
+  @ApiOperation({ summary: 'Get all roles' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns list of all roles',
+    type: [Role],
+  })
+  findAllRoles(): Promise<Role[]> {
+    return this.permissionsService.findAllRoles();
+  }
+
+  @Post('roles')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a new role' })
+  @ApiResponse({
+    status: 201,
+    description: 'Role created successfully',
+    type: Role,
+  })
+  @ApiResponse({ status: 409, description: 'Role already exists' })
+  createRole(@Body() createRoleDto: CreateRoleDto): Promise<Role> {
+    return this.permissionsService.createRole(createRoleDto);
+  }
+
+  @Get('roles/:id')
+  @ApiOperation({ summary: 'Get role by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns role with permissions',
+    type: Role,
+  })
+  @ApiResponse({ status: 404, description: 'Role not found' })
+  findOneRole(@Param('id') id: string): Promise<Role> {
+    return this.permissionsService.findOneRole(id);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a permission by ID' })
   @ApiResponse({
@@ -129,43 +166,6 @@ export class PermissionsController {
   @ApiResponse({ status: 400, description: 'Permission is assigned to one or more roles' })
   async deletePermission(@Param('id') id: string): Promise<void> {
     return this.permissionsService.deletePermission(id);
-  }
-
-  // Role endpoints
-  @Get('roles')
-  @ApiOperation({ summary: 'Get all roles' })
-  @ApiResponse({
-    status: 200,
-    description: 'Returns list of all roles',
-    type: [Role],
-  })
-  findAllRoles(): Promise<Role[]> {
-    return this.permissionsService.findAllRoles();
-  }
-
-  @Post('roles')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Create a new role' })
-  @ApiResponse({
-    status: 201,
-    description: 'Role created successfully',
-    type: Role,
-  })
-  @ApiResponse({ status: 409, description: 'Role already exists' })
-  createRole(@Body() createRoleDto: CreateRoleDto): Promise<Role> {
-    return this.permissionsService.createRole(createRoleDto);
-  }
-
-  @Get('roles/:id')
-  @ApiOperation({ summary: 'Get role by ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Returns role with permissions',
-    type: Role,
-  })
-  @ApiResponse({ status: 404, description: 'Role not found' })
-  findOneRole(@Param('id') id: string): Promise<Role> {
-    return this.permissionsService.findOneRole(id);
   }
 
   // RolePermission endpoints

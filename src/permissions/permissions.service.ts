@@ -218,9 +218,15 @@ export class PermissionsService {
   }
 
   async findAllRoles(): Promise<Role[]> {
-    return this.roleRepository.find({
-      order: { name: 'ASC' },
-    });
+    try {
+      const roles = await this.roleRepository.find({
+        order: { name: 'ASC' },
+      });
+      return roles;
+    } catch (error) {
+      console.error('Error fetching roles:', error);
+      throw error;
+    }
   }
 
   async findOneRole(id: string): Promise<Role> {
