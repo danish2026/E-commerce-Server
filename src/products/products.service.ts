@@ -198,7 +198,23 @@ export class ProductsService {
       }
     }
 
+    // Update fields with Object.assign
     Object.assign(product, updateProductDto);
+    
+    // Ensure numeric fields are properly converted to numbers (important for TypeORM with PostgreSQL numeric types)
+    if (updateProductDto.stock !== undefined) {
+      product.stock = Number(updateProductDto.stock);
+    }
+    if (updateProductDto.costPrice !== undefined) {
+      product.costPrice = updateProductDto.costPrice !== null ? Number(updateProductDto.costPrice) : null;
+    }
+    if (updateProductDto.sellingPrice !== undefined) {
+      product.sellingPrice = updateProductDto.sellingPrice !== null ? Number(updateProductDto.sellingPrice) : null;
+    }
+    if (updateProductDto.gstPercentage !== undefined) {
+      product.gstPercentage = Number(updateProductDto.gstPercentage);
+    }
+    
     return this.productRepository.save(product);
   }
 

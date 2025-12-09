@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateOrderItemDto, CreateOrderDto } from './dto/create-order-item.dto';
@@ -24,6 +24,16 @@ export class OrderItemService {
     const product = await this.productRepository.findOne({ where: { id: productId } });
     if (!product) {
       throw new NotFoundException(`Product with ID ${productId} not found`);
+    }
+
+    // Validate stock availability
+    const currentStock = Number(product.stock) || 0;
+    const requestedQuantity = Number(quantity) || 0;
+    
+    if (requestedQuantity > currentStock) {
+      throw new BadRequestException(
+        `Insufficient stock for product "${product.name}". Available: ${currentStock} item(s), Requested: ${requestedQuantity} item(s).`
+      );
     }
 
     const unitPrice = Number(product.sellingPrice);
@@ -56,8 +66,10 @@ export class OrderItemService {
     // Calculate total discount from all discount entries
     const totalOrderDiscount = discounts.reduce((sum, discount) => sum + Math.max(0, Number(discount.amount) || 0), 0);
 
-    // First pass: calculate base subtotals (before discounts) for proportional distribution
+    // First pass: validate all products exist and check stock availability
     const baseSubtotals: number[] = [];
+    const productStockMap = new Map<string, { stock: number; requested: number; name: string }>();
+    
     for (const itemDto of items) {
       const { productId, quantity } = itemDto;
       const product = await this.productRepository.findOne({ where: { id: productId } });
@@ -66,9 +78,31 @@ export class OrderItemService {
         throw new NotFoundException(`Product with ID ${productId} not found`);
       }
 
+      // Track requested quantity per product for validation
+      const requestedQuantity = Number(quantity) || 0;
+      if (productStockMap.has(productId)) {
+        const existing = productStockMap.get(productId)!;
+        existing.requested += requestedQuantity;
+      } else {
+        productStockMap.set(productId, {
+          stock: Number(product.stock) || 0,
+          requested: requestedQuantity,
+          name: product.name,
+        });
+      }
+
       const unitPrice = Number(product.sellingPrice);
       const baseSubtotal = unitPrice * quantity;
       baseSubtotals.push(baseSubtotal);
+    }
+
+    // Validate stock availability for all products
+    for (const [productId, stockInfo] of productStockMap.entries()) {
+      if (stockInfo.requested > stockInfo.stock) {
+        throw new BadRequestException(
+          `Insufficient stock for product "${stockInfo.name}". Available: ${stockInfo.stock} item(s), Requested: ${stockInfo.requested} item(s).`
+        );
+      }
     }
 
     // Calculate total base subtotal for proportional discount distribution
@@ -116,6 +150,11 @@ export class OrderItemService {
       const savedItem = await this.orderItemRepository.save(orderItem);
       createdItems.push(savedItem);
       grandTotal += totalAmount;
+
+      // Reduce product stock after successfully creating order item
+      const orderQuantity = Number(quantity) || 0;
+      product.stock = Number(product.stock) - orderQuantity;
+      await this.productRepository.save(product);
     }
 
     return {
