@@ -11,6 +11,6 @@ export class BulkCreatePermissionDto {
   @IsArray()
   @ArrayMinSize(1)
   @IsString({ each: true })
-  actions: string[];
-}
+  actions: string[]; 
+} 
 

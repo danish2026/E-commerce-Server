@@ -18,7 +18,7 @@ export class OrderItemService {
   ) { }
 
   async create(createOrderItemDto: CreateOrderItemDto) {
-    const { productId, quantity } = createOrderItemDto;
+    const { productId, quantity, discount = 0 } = createOrderItemDto;
 
     const product = await this.productRepository.findOne({ where: { id: productId } });
     if (!product) {
@@ -27,8 +27,11 @@ export class OrderItemService {
 
     const unitPrice = Number(product.sellingPrice);
     const gstPercentage = Number(product.gstPercentage);
-    const gstAmount = (unitPrice * quantity * gstPercentage) / 100;
-    const totalAmount = (unitPrice * quantity) + gstAmount;
+    const baseSubtotal = unitPrice * quantity;
+    const itemDiscount = Math.max(0, Number(discount) || 0);
+    const discountedSubtotal = Math.max(0, baseSubtotal - itemDiscount);
+    const gstAmount = (discountedSubtotal * gstPercentage) / 100;
+    const totalAmount = discountedSubtotal + gstAmount;
 
     const orderItem = this.orderItemRepository.create({
       productId,
@@ -37,6 +40,7 @@ export class OrderItemService {
       gstPercentage,
       gstAmount,
       totalAmount,
+      discount: itemDiscount,
     });
 
     const saved = await this.orderItemRepository.save(orderItem);
@@ -44,10 +48,15 @@ export class OrderItemService {
   }
 
   async createOrder(createOrderDto: CreateOrderDto) {
-    const { items, customerName, customerPhone, discount, paymentType } = createOrderDto;
+    const { items, customerName, customerPhone, discounts = [], paymentType } = createOrderDto;
     const createdItems: OrderItem[] = [];
     let grandTotal = 0;
 
+    // Calculate total discount from all discount entries
+    const totalOrderDiscount = discounts.reduce((sum, discount) => sum + Math.max(0, Number(discount.amount) || 0), 0);
+
+    // First pass: calculate base subtotals (before discounts) for proportional distribution
+    const baseSubtotals: number[] = [];
     for (const itemDto of items) {
       const { productId, quantity } = itemDto;
       const product = await this.productRepository.findOne({ where: { id: productId } });
@@ -57,9 +66,38 @@ export class OrderItemService {
       }
 
       const unitPrice = Number(product.sellingPrice);
+      const baseSubtotal = unitPrice * quantity;
+      baseSubtotals.push(baseSubtotal);
+    }
+
+    // Calculate total base subtotal for proportional discount distribution
+    const totalBaseSubtotal = baseSubtotals.reduce((sum, amount) => sum + amount, 0);
+
+    // Second pass: create order items with item discounts and proportional order-level discounts
+    for (let i = 0; i < items.length; i++) {
+      const itemDto = items[i];
+      const { productId, quantity, discount: itemDiscount = 0 } = itemDto;
+      const product = await this.productRepository.findOne({ where: { id: productId } });
+
+      if (!product) {
+        throw new NotFoundException(`Product with ID ${productId} not found`);
+      }
+
+      const unitPrice = Number(product.sellingPrice);
       const gstPercentage = Number(product.gstPercentage);
-      const gstAmount = (unitPrice * quantity * gstPercentage) / 100;
-      const totalAmount = (unitPrice * quantity) + gstAmount;
+      const baseSubtotal = baseSubtotals[i];
+      const itemDiscountValue = Math.max(0, Number(itemDiscount) || 0);
+      
+      // Calculate proportional order-level discount for this item based on base subtotal
+      const itemProportionalDiscount = totalBaseSubtotal > 0 
+        ? (baseSubtotal / totalBaseSubtotal) * totalOrderDiscount 
+        : 0;
+      
+      // Apply both item discount and proportional order discount
+      const totalDiscountForItem = itemDiscountValue + itemProportionalDiscount;
+      const discountedSubtotal = Math.max(0, baseSubtotal - totalDiscountForItem);
+      const gstAmount = (discountedSubtotal * gstPercentage) / 100;
+      const totalAmount = discountedSubtotal + gstAmount;
 
       const orderItem = this.orderItemRepository.create({
         productId,
@@ -70,7 +108,7 @@ export class OrderItemService {
         totalAmount,
         customerName: customerName ?? null,
         customerPhone: customerPhone ?? null,
-        discount: typeof discount !== 'undefined' ? discount : null,
+        discount: totalDiscountForItem,
         paymentType: paymentType ?? null,
       });
 

@@ -30,6 +30,28 @@ export class CreateOrderItemDto {
     @Type(() => Number)
     @Min(1)
     quantity: number;
+
+    @ApiProperty({
+        description: 'Discount amount applied to this item (absolute value)',
+        example: 25,
+        required: false,
+    })
+    @IsOptional()
+    @IsNumber({ maxDecimalPlaces: 2 })
+    @Type(() => Number)
+    @Min(0)
+    discount?: number;
+}
+
+export class CreateDiscountDto {
+    @ApiProperty({
+        description: 'Discount amount (absolute value)',
+        example: 50,
+    })
+    @IsNumber({ maxDecimalPlaces: 2 })
+    @Type(() => Number)
+    @Min(0)
+    amount: number;
 }
 
 export class CreateOrderDto {
@@ -52,15 +74,15 @@ export class CreateOrderDto {
     customerPhone?: string | null;
 
     @ApiProperty({
-        description: 'Discount applied to the order',
-        example: 50,
+        description: 'Discounts applied to the order',
+        type: [CreateDiscountDto],
         required: false,
     })
     @IsOptional()
-    @IsNumber({ maxDecimalPlaces: 2 })
-    @Type(() => Number)
-    @Min(0)
-    discount?: number;
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => CreateDiscountDto)
+    discounts?: CreateDiscountDto[];
 
     @ApiProperty({
         description: 'Payment method used for the order',
@@ -75,7 +97,7 @@ export class CreateOrderDto {
         description: 'Order line items with product reference and quantity',
         type: [CreateOrderItemDto],
     })
-    @IsArray()
+    @IsArray() 
     @ArrayMinSize(1)
     @ValidateNested({ each: true })
     @Type(() => CreateOrderItemDto)
