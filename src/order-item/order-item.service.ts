@@ -7,6 +7,7 @@ import { OrderItem } from './order-item.entity';
 import { Product } from '../products/product.entity';
 import { OrderItemFilterDto } from './dto/order-item-filter.dto';
 import { PaginatedOrderItemResponse } from './dto/paginated-order-item-response.dto';
+import { PaginatedGroupedOrderResponse, GroupedOrder } from './dto/grouped-order.dto';
 
 @Injectable()
 export class OrderItemService {
@@ -253,5 +254,191 @@ export class OrderItemService {
       throw new NotFoundException(`Order item with ID ${id} not found`);
     }
     return { message: 'Order item deleted successfully' };
+  }
+
+  /**
+   * Delete all items in an order group
+   */
+  async removeOrderGroup(
+    customerName: string | null,
+    customerPhone: string | null,
+    paymentType: string | null,
+    createdAt: string,
+  ): Promise<{ message: string; deletedCount: number }> {
+    const items = await this.findItemsByOrderGroup(
+      customerName,
+      customerPhone,
+      paymentType,
+      createdAt,
+    );
+
+    if (items.length === 0) {
+      throw new NotFoundException('No order items found for this order group');
+    }
+
+    const itemIds = items.map((item) => item.id);
+    const result = await this.orderItemRepository.delete(itemIds);
+
+    return {
+      message: 'Order group deleted successfully',
+      deletedCount: result.affected || 0,
+    };
+  }
+
+  /**
+   * Groups order items by order (same customerName, customerPhone, paymentType, and createdAt within 5 seconds)
+   */
+  async findAllGrouped(filter: OrderItemFilterDto = {} as OrderItemFilterDto): Promise<PaginatedGroupedOrderResponse> {
+    const { page = 1, limit = 10 } = filter;
+    
+    // Build base query
+    const baseQuery = this.buildQuery(filter);
+    
+    // Get all matching items ordered by createdAt DESC
+    const allItems = await baseQuery
+      .orderBy('orderItem.createdAt', 'DESC')
+      .getMany();
+
+    // Group items by order key (customerName, customerPhone, paymentType, createdAt within 5 seconds)
+    const orderGroups = new Map<string, OrderItem[]>();
+    
+    for (const item of allItems) {
+      // Create a key based on customer info, payment type, and time window (5 seconds)
+      const createdAt = new Date(item.createdAt);
+      const timeWindow = Math.floor(createdAt.getTime() / 5000) * 5000; // Round to nearest 5 seconds
+      
+      const orderKey = JSON.stringify({
+        customerName: item.customerName || null,
+        customerPhone: item.customerPhone || null,
+        paymentType: item.paymentType || null,
+        timeWindow: timeWindow,
+      });
+
+      if (!orderGroups.has(orderKey)) {
+        orderGroups.set(orderKey, []);
+      }
+      orderGroups.get(orderKey)!.push(item);
+    }
+
+    // Convert groups to GroupedOrder objects
+    const groupedOrders: GroupedOrder[] = Array.from(orderGroups.values()).map((items) => {
+      const firstItem = items[0];
+      const subtotal = items.reduce((sum, item) => {
+        const itemSubtotal = Number(item.totalAmount || 0) - Number(item.gstAmount || 0);
+        return sum + itemSubtotal;
+      }, 0);
+      const gstTotal = items.reduce((sum, item) => sum + Number(item.gstAmount || 0), 0);
+      const discount = items.reduce((sum, item) => sum + Number(item.discount || 0), 0);
+      const grandTotal = items.reduce((sum, item) => sum + Number(item.totalAmount || 0), 0);
+
+      const orderId = firstItem.id;
+      const orderNumber = orderId.length >= 8 
+        ? orderId.substring(0, 8).toUpperCase().replace(/-/g, '')
+        : orderId.toUpperCase().replace(/-/g, '');
+
+      return {
+        id: orderId,
+        orderNumber,
+        customerName: firstItem.customerName,
+        customerPhone: firstItem.customerPhone,
+        paymentType: firstItem.paymentType,
+        subtotal,
+        gstTotal,
+        discount,
+        grandTotal,
+        itemCount: items.length,
+        createdAt: firstItem.createdAt,
+      };
+    });
+
+    // Sort grouped orders by createdAt DESC
+    groupedOrders.sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    // Apply pagination
+    const total = groupedOrders.length;
+    const skip = (page - 1) * limit;
+    const paginatedOrders = groupedOrders.slice(skip, skip + limit);
+
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(total / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
+    return {
+      data: paginatedOrders,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext,
+        hasPrev,
+      },
+    };
+  }
+
+  /**
+   * Get all items for a specific order group
+   */
+  async findItemsByOrderGroup(
+    customerName: string | null,
+    customerPhone: string | null,
+    paymentType: string | null,
+    createdAt: string,
+  ): Promise<OrderItem[]> {
+    try {
+      const createdAtDate = new Date(createdAt);
+      
+      // Use a wider time window (10 seconds) to account for any timing differences
+      const timeWindowStart = new Date(Math.floor(createdAtDate.getTime() / 10000) * 10000 - 5000); // 5 seconds before
+      const timeWindowEnd = new Date(Math.floor(createdAtDate.getTime() / 10000) * 10000 + 15000); // 15 seconds after
+
+      const query = this.orderItemRepository
+        .createQueryBuilder('orderItem')
+        .leftJoinAndSelect('orderItem.product', 'product')
+        .where('orderItem.createdAt >= :timeWindowStart', { timeWindowStart })
+        .andWhere('orderItem.createdAt <= :timeWindowEnd', { timeWindowEnd })
+        .orderBy('orderItem.createdAt', 'DESC');
+
+      if (customerName === null) {
+        query.andWhere('(orderItem.customerName IS NULL OR orderItem.customerName = :emptyString)', { emptyString: '' });
+      } else {
+        query.andWhere('orderItem.customerName = :customerName', { customerName });
+      }
+
+      if (customerPhone === null) {
+        query.andWhere('(orderItem.customerPhone IS NULL OR orderItem.customerPhone = :emptyString)', { emptyString: '' });
+      } else {
+        query.andWhere('orderItem.customerPhone = :customerPhone', { customerPhone });
+      }
+
+      if (paymentType === null) {
+        query.andWhere('orderItem.paymentType IS NULL');
+      } else {
+        query.andWhere('orderItem.paymentType = :paymentType', { paymentType });
+      }
+
+      const items = await query.getMany();
+      
+      // If no items found with exact match, try a broader search by time only
+      if (items.length === 0) {
+        const fallbackQuery = this.orderItemRepository
+          .createQueryBuilder('orderItem')
+          .leftJoinAndSelect('orderItem.product', 'product')
+          .where('orderItem.createdAt >= :timeWindowStart', { timeWindowStart })
+          .andWhere('orderItem.createdAt <= :timeWindowEnd', { timeWindowEnd })
+          .orderBy('orderItem.createdAt', 'DESC')
+          .limit(50); // Limit to prevent too many results
+        
+        return await fallbackQuery.getMany();
+      }
+
+      return items;
+    } catch (error) {
+      console.error('Error in findItemsByOrderGroup:', error);
+      throw error;
+    }
   }
 }
