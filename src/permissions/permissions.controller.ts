@@ -23,6 +23,7 @@ import { BulkCreatePermissionDto } from './dto/bulk-create-permission.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { CreateRolePermissionDto } from './dto/create-role-permission.dto';
+import { DeleteRolePermissionDto } from './dto/delete-role-permission.dto';
 import { PermissionFilterDto } from './dto/permission-filter.dto';
 import { PaginatedPermissionResponse } from './dto/paginated-permission-response.dto';
 import { Permission } from './permission.entity';
@@ -206,6 +207,47 @@ export class PermissionsController {
   @ApiResponse({ status: 404, description: 'Role not found' })
   findRolePermissionsByRole(@Param('roleId') roleId: string): Promise<RolePermission[]> {
     return this.permissionsService.findRolePermissionsByRole(roleId);
+  }
+
+  @Delete('role-permissions')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Remove permissions from a role (bulk delete)' })
+  @ApiResponse({
+    status: 204,
+    description: 'Role permissions removed successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Role or role-permission relationship not found' })
+  async deleteRolePermission(
+    @Body() deleteRolePermissionDto: DeleteRolePermissionDto,
+  ): Promise<void> {
+    return this.permissionsService.deleteRolePermission(deleteRolePermissionDto);
+  }
+
+  @Delete('role-permissions/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete a role-permission relationship by ID' })
+  @ApiResponse({
+    status: 204,
+    description: 'Role-permission relationship deleted successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Role-permission relationship not found' })
+  async deleteRolePermissionById(@Param('id') id: string): Promise<void> {
+    return this.permissionsService.deleteRolePermissionById(id);
+  }
+
+  @Delete('role-permissions/role/:roleId/permission/:permissionId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete a role-permission relationship by role and permission IDs' })
+  @ApiResponse({
+    status: 204,
+    description: 'Role-permission relationship deleted successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Role, permission, or relationship not found' })
+  async deleteRolePermissionByRoleAndPermission(
+    @Param('roleId') roleId: string,
+    @Param('permissionId') permissionId: string,
+  ): Promise<void> {
+    return this.permissionsService.deleteRolePermissionByRoleAndPermission(roleId, permissionId);
   }
 }
 

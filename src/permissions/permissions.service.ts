@@ -14,6 +14,7 @@ import { BulkCreatePermissionDto } from './dto/bulk-create-permission.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { CreateRolePermissionDto } from './dto/create-role-permission.dto';
+import { DeleteRolePermissionDto } from './dto/delete-role-permission.dto';
 import { PermissionFilterDto } from './dto/permission-filter.dto';
 import { PaginatedPermissionResponse } from './dto/paginated-permission-response.dto';
 
@@ -326,6 +327,84 @@ export class PermissionsService {
     });
 
     return rolePermissions;
+  }
+
+  async deleteRolePermission(
+    deleteRolePermissionDto: DeleteRolePermissionDto,
+  ): Promise<void> {
+    const { roleId, permissionIds } = deleteRolePermissionDto;
+
+    // Verify role exists
+    await this.findOneRole(roleId);
+
+    // Verify all permissions exist
+    const permissions = await this.permissionRepository.find({
+      where: { id: In(permissionIds) },
+    });
+
+    if (permissions.length !== permissionIds.length) {
+      const foundIds = permissions.map((p) => p.id);
+      const missingIds = permissionIds.filter((id) => !foundIds.includes(id));
+      throw new NotFoundException(
+        `Permissions with IDs ${missingIds.join(', ')} not found`,
+      );
+    }
+
+    // Use query builder for bulk deletion with In operator
+    const deleteResult = await this.rolePermissionRepository
+      .createQueryBuilder()
+      .delete()
+      .from(RolePermission)
+      .where('roleId = :roleId', { roleId })
+      .andWhere('permissionId IN (:...permissionIds)', { permissionIds })
+      .execute();
+
+    // If nothing was deleted, it might already be deleted - that's okay
+    if (deleteResult.affected === 0) {
+      // Check if any relationships exist for this role
+      const existingCount = await this.rolePermissionRepository.count({
+        where: { roleId },
+      });
+      
+      if (existingCount === 0) {
+        // Role has no permissions, which is fine
+        return;
+      }
+      // Some relationships exist but not the ones we're trying to delete
+      // This means they were already deleted - return successfully
+      return;
+    }
+  }
+
+  async deleteRolePermissionById(id: string): Promise<void> {
+    const deleteResult = await this.rolePermissionRepository.delete({ id });
+
+    if (deleteResult.affected === 0) {
+      throw new NotFoundException(`Role-permission relationship with ID ${id} not found`);
+    }
+  }
+
+  async deleteRolePermissionByRoleAndPermission(
+    roleId: string,
+    permissionId: string,
+  ): Promise<void> {
+    // Verify role exists
+    await this.findOneRole(roleId);
+
+    // Verify permission exists
+    await this.findOnePermission(permissionId);
+
+    // Delete the role-permission relationship using delete method
+    const deleteResult = await this.rolePermissionRepository.delete({
+      roleId,
+      permissionId,
+    });
+
+    if (deleteResult.affected === 0) {
+      throw new NotFoundException(
+        `Role-permission relationship not found for role ${roleId} and permission ${permissionId}`,
+      );
+    }
   }
 }
 
